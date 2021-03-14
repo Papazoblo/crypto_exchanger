@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'maven'
 }
 
 group 'org.example'
@@ -7,13 +8,17 @@ version '1.0-SNAPSHOT'
 
 repositories {
     mavenCentral()
+    maven {
+        url 'E:/maven'
+    }
 }
 
 dependencies {
 
-    implementation 'org.springframework.boot:spring-boot-starter:2.3.9.RELEASE'
-    implementation 'org.springframework.boot:spring-boot-starter-web:2.4.3'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux:2.4.3'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa:2.4.3'
+
+    implementation 'com.binance.api:binance-api-client:1.0.1'
 
     implementation 'org.flywaydb:flyway-core:7.5.4'
     implementation 'org.postgresql:postgresql:42.1.4'
