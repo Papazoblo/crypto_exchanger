@@ -1,0 +1,12 @@
+package medvedev.com.enums;
+
+public enum SystemConfiguration {
+
+    EXCHANGE_CRON,
+    MIN_DIFFERENCE_PERCENTAGE,
+    MIN_AMOUNT_EXCHANGE,
+    MAX_AMOUNT_EXCHANGE,
+    SYSTEM_STATE,
+    MIN_MINUTES_SPACE_BETWEEN_EXCHANGE,
+    MIN_DIFFERENCE_PRICE;
+}
