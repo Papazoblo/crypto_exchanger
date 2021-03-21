@@ -29,7 +29,7 @@ public class DbConfiguration {
         return new JpaTransactionManager(entityManagerFactory);
     }
 
-    @Bean
+    @Bean(name = "entityManagerFactory")
     public LocalContainerEntityManagerFactoryBean entityManagerFactoryBean(
             EntityManagerFactoryBuilder builder,
             DataSource dataSource
