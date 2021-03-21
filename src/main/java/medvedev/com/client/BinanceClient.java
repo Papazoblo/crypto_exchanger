@@ -2,14 +2,15 @@ package medvedev.com.client;
 
 import com.binance.api.client.BinanceApiClientFactory;
 import com.binance.api.client.BinanceApiRestClient;
-import com.binance.api.client.domain.account.Account;
-import com.binance.api.client.domain.account.AssetBalance;
-import com.binance.api.client.domain.account.NewOrder;
-import com.binance.api.client.domain.account.NewOrderResponse;
+import com.binance.api.client.domain.OrderStatus;
+import com.binance.api.client.domain.account.*;
+import com.binance.api.client.domain.account.request.OrderStatusRequest;
 import com.binance.api.client.domain.market.TickerStatistics;
 import medvedev.com.dto.property.BinanceProperty;
 import medvedev.com.enums.Currency;
 import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
 
 @Service
 public class BinanceClient {
@@ -31,24 +32,18 @@ public class BinanceClient {
         return client.get24HrPriceStatistics(property.getSymbol());
     }
 
-    /**
-     * Создать ордер на покупку
-     *
-     * @param quantity - количество
-     * @return ответ по созданию ордера
-     */
-    public NewOrderResponse creteBuyOrder(String quantity) {
-        return createOrder(NewOrder.marketBuy(property.getSymbol(), quantity));
+    public NewOrderResponse creteBuyOrder(BigDecimal quantity) {
+        return createNewOrder(NewOrder.marketBuy(property.getSymbol(), quantity.toString()));
     }
 
-    /**
-     * Создать ордер на продажу
-     *
-     * @param quantity
-     * @return ответ по созданию ордера
-     */
-    public NewOrderResponse createSellOrder(String quantity) {
-        return createOrder(NewOrder.marketSell(property.getSymbol(), quantity));
+    public NewOrderResponse createSellOrder(BigDecimal quantity) {
+        return createNewOrder(NewOrder.marketSell(property.getSymbol(), quantity.toString()));
+    }
+
+    public OrderStatus getOrderStatus(Long orderId) {
+        OrderStatusRequest request = new OrderStatusRequest(property.getSymbol(), orderId);
+        Order response = client.getOrderStatus(request);
+        return response.getStatus();
     }
 
     /**
@@ -63,32 +58,15 @@ public class BinanceClient {
         );
     }
 
-    /**
-     * Получить балансе по указанной валюте
-     *
-     * @param currency - валюта
-     * @return - объект баланса валюты
-     */
     public AssetBalance getBalanceByCurrency(Currency currency) {
         return getAccountInfo().getAssetBalance(currency.name());
     }
 
-    /**
-     * Получить время сервера
-     *
-     * @return - время сервера
-     */
     private Long getServerTime() {
         return client.getServerTime();
     }
 
-    /**
-     * Создать новый ордер
-     *
-     * @param order - ордер для создания
-     * @return ответ по созданию ордера
-     */
-    private NewOrderResponse createOrder(NewOrder order) {
+    private NewOrderResponse createNewOrder(NewOrder order) {
         order.timestamp(getServerTime());
         order.recvWindow(property.getRectWindow());
         return client.newOrder(order);
