@@ -13,9 +13,6 @@ import javax.persistence.Table;
 public class SystemConfigurationEntity {
 
     @Id
-    private Short id;
-
-    @Column
     private String name;
 
     @Column
