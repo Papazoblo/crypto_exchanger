@@ -8,15 +8,12 @@ import org.springframework.lang.NonNull;
 public class SystemConfigurationDto {
 
     @NonNull
-    private Short id;
-    @NonNull
     private String name;
     @NonNull
     private String value;
 
     public static SystemConfigurationDto from(SystemConfigurationEntity entity) {
         return new SystemConfigurationDto(
-                entity.getId(),
                 entity.getName(),
                 entity.getValue()
         );
@@ -24,7 +21,6 @@ public class SystemConfigurationDto {
 
     public static SystemConfigurationEntity to(SystemConfigurationDto dto) {
         SystemConfigurationEntity entity = new SystemConfigurationEntity();
-        entity.setId(dto.getId());
         entity.setName(dto.getName());
         entity.setValue(dto.getValue());
         return entity;

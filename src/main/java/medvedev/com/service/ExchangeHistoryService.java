@@ -1,6 +1,7 @@
 package medvedev.com.service;
 
 import com.binance.api.client.domain.OrderSide;
+import com.binance.api.client.domain.OrderStatus;
 import lombok.RequiredArgsConstructor;
 import medvedev.com.dto.ExchangeHistoryDto;
 import medvedev.com.entity.ExchangeHistoryEntity;
@@ -23,12 +24,13 @@ public class ExchangeHistoryService {
     private final TimeService timeService;
 
     public List<ExchangeHistoryDto> getAllOpenExchange() {
-        return toDto(exchangeHistoryRepository.findAllByTypeAndIdPrevExchangeIsNotNull(OrderSide.BUY));
+        return toDto(exchangeHistoryRepository.findAllByOperationTypeAndOrderStatusAndIdPrevExchangeIsNull(OrderSide.BUY,
+                OrderStatus.FILLED));
     }
 
-    public List<ExchangeHistoryDto> getOpenProfitableExchange(BigDecimal currentRate) {
+    public List<ExchangeHistoryDto> getOpenProfitableExchange(BigDecimal lastPrice) {
         return getAllOpenExchange().stream()
-                .filter(record -> record.getRate().compareTo(currentRate) == -1)
+                .filter(record -> record.getPrice().isLessThen(lastPrice))
                 .collect(Collectors.toList());
     }
 
@@ -41,10 +43,11 @@ public class ExchangeHistoryService {
                 .orElseThrow(() -> new EntityNotFoundException("ExchangeHistoryEntity", id)));
     }
 
-    public List<ExchangeHistoryDto> findLastExchangeFiatCryptInTime() {
+    public List<ExchangeHistoryDto> findLastExchangeFiatCryptInTimeRange() {
         Integer minutes = systemConfigurationService.findIntegerByName(SystemConfiguration.MIN_MINUTES_SPACE_BETWEEN_EXCHANGE);
         LocalDateTime startTime = timeService.withoutMinusMinutes(minutes);
-        return toDto(exchangeHistoryRepository.findAllByDateTimeGreaterThanAndIdPrevExchangeIsNotNull(startTime));
+        return toDto(exchangeHistoryRepository.findAllByDateTimeGreaterThanAndIdPrevExchangeIsNotNullAndOrderStatus(
+                startTime, OrderStatus.FILLED));
     }
 
     private static List<ExchangeHistoryDto> toDto(List<ExchangeHistoryEntity> entities) {
