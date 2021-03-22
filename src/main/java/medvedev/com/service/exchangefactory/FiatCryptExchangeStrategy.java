@@ -41,11 +41,11 @@ public class FiatCryptExchangeStrategy extends BaseExchangeStrategy {
 
     @Override
     protected void sendExchangeRequest(BigDecimal value) {
-
+        binanceClient.creteBuyOrder(value);
     }
 
     private void doExchange(BigDecimalWrapper value) {
-        List<ExchangeHistoryDto> historyList = historyService.findLastExchangeFiatCryptInTime();
+        List<ExchangeHistoryDto> historyList = historyService.findLastExchangeFiatCryptInTimeRange();
         if (!historyList.isEmpty()) {
             if (getLastMinRate(historyList).isGreaterThen(getLastPrice())) {
                 sendExchangeRequest(value);
@@ -59,8 +59,8 @@ public class FiatCryptExchangeStrategy extends BaseExchangeStrategy {
 
     private static BigDecimalWrapper getLastMinRate(List<ExchangeHistoryDto> historyList) {
         return historyList.stream()
-                .min(Comparator.comparing(ExchangeHistoryDto::getRate))
-                .map(ExchangeHistoryDto::getRate)
+                .min(Comparator.comparing(ExchangeHistoryDto::getPrice))
+                .map(ExchangeHistoryDto::getPrice)
                 .orElse(new BigDecimalWrapper(0));
     }
 }

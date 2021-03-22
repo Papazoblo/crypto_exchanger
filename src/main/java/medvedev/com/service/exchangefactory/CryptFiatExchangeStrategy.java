@@ -49,7 +49,7 @@ public class CryptFiatExchangeStrategy extends BaseExchangeStrategy {
                                                                      BigDecimalWrapper lastPrice) {
         double priceDifference = systemConfigurationService.findDoubleByName(SystemConfiguration.MIN_DIFFERENCE_PRICE);
         return histories.stream()
-                .filter(record -> isDifference(lastPrice, record.getRate().doubleValue(),
+                .filter(record -> isDifference(lastPrice, record.getPrice().doubleValue(),
                         priceDifference))
                 .collect(Collectors.toList());
     }
