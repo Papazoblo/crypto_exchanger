@@ -2,6 +2,10 @@ package medvedev.com.exception;
 
 public class EntityNotFoundException extends RuntimeException {
 
+    public EntityNotFoundException(String tableName) {
+        super(String.format("%s not found", tableName));
+    }
+
     public EntityNotFoundException(String tableName, Number id) {
         super(String.format("%s not found with id = %d", tableName, id));
     }
