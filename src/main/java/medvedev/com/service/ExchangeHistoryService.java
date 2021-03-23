@@ -12,8 +12,12 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static com.binance.api.client.domain.OrderStatus.NEW;
+import static com.binance.api.client.domain.OrderStatus.PARTIALLY_FILLED;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +26,16 @@ public class ExchangeHistoryService {
     private final ExchangeHistoryRepository exchangeHistoryRepository;
     private final SystemConfigurationService systemConfigurationService;
     private final TimeService timeService;
+
+    public void alterStatusById(Long id, OrderStatus status) {
+        exchangeHistoryRepository.alterStatusById(status, id);
+    }
+
+    public ExchangeHistoryDto getNewExchange() {
+        return exchangeHistoryRepository.findFirstByOrderStatusIn(Arrays.asList(NEW, PARTIALLY_FILLED))
+                .map(ExchangeHistoryDto::from)
+                .orElseThrow(() -> new EntityNotFoundException("New exchange history"));
+    }
 
     public List<ExchangeHistoryDto> getAllOpenExchange() {
         return toDto(exchangeHistoryRepository.findAllByOperationTypeAndOrderStatusAndIdPrevExchangeIsNull(OrderSide.BUY,
