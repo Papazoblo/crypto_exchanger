@@ -19,6 +19,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa:2.4.3'
 
     implementation 'com.binance.api:binance-api-client:1.0.1'
+    implementation 'org.telegram:telegrambots:5.1.1'
 
     implementation 'org.flywaydb:flyway-core:7.5.4'
     implementation 'org.postgresql:postgresql:42.1.4'
