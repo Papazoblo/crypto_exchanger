@@ -1,8 +1,8 @@
-package medvedev.com.telegram.service;
+package medvedev.com.service.telegram;
 
 import lombok.RequiredArgsConstructor;
-import medvedev.com.telegram.dto.property.TelegramProperty;
-import medvedev.com.telegram.service.handler.BaseHandler;
+import medvedev.com.dto.property.TelegramProperty;
+import medvedev.com.service.telegram.handler.BaseHandler;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.objects.Message;

@@ -1,4 +1,4 @@
-package medvedev.com.telegram.service;
+package medvedev.com.service.telegram;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

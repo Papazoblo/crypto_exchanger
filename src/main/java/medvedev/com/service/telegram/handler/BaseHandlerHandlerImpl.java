@@ -1,6 +1,6 @@
-package medvedev.com.telegram.service.handler;
+package medvedev.com.service.telegram.handler;
 
-import medvedev.com.telegram.service.MessageSenderService;
+import medvedev.com.service.telegram.MessageSenderService;
 
 public abstract class BaseHandlerHandlerImpl implements BaseHandler {
 

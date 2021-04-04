@@ -1,9 +1,9 @@
-package medvedev.com.telegram.service;
+package medvedev.com.service.telegram;
 
 import lombok.experimental.UtilityClass;
-import medvedev.com.telegram.service.handler.AuthorizationHandler;
-import medvedev.com.telegram.service.handler.BaseHandler;
-import medvedev.com.telegram.service.handler.IncorrectCommandHandler;
+import medvedev.com.service.telegram.handler.AuthorizationHandler;
+import medvedev.com.service.telegram.handler.BaseHandler;
+import medvedev.com.service.telegram.handler.IncorrectCommandHandler;
 import org.telegram.telegrambots.meta.api.objects.Message;
 
 @UtilityClass

@@ -1,4 +1,4 @@
-package medvedev.com.telegram.service;
+package medvedev.com.service.telegram;
 
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 

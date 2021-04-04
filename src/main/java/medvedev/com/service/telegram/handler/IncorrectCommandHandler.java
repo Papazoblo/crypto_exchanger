@@ -1,6 +1,6 @@
-package medvedev.com.telegram.service.handler;
+package medvedev.com.service.telegram.handler;
 
-import medvedev.com.telegram.service.MessageSenderService;
+import medvedev.com.service.telegram.MessageSenderService;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.Message;
 
