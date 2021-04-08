@@ -1,5 +1,6 @@
 package medvedev.com.enums;
 
 public enum ChatState {
-    NONE
+    NONE,
+    MAIN_MENU
 }

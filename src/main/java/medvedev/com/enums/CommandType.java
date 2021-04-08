@@ -1,4 +1,4 @@
-package medvedev.com.telegram.enums;
+package medvedev.com.enums;
 
 public enum CommandType {
     START,

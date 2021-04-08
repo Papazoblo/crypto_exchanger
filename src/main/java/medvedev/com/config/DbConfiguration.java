@@ -24,7 +24,7 @@ public class DbConfiguration {
         return DataSourceBuilder.create().build();
     }
 
-    @Bean
+    @Bean(name = "transactionManager")
     public JpaTransactionManager jpaTransactionManager(EntityManagerFactory entityManagerFactory) {
         return new JpaTransactionManager(entityManagerFactory);
     }

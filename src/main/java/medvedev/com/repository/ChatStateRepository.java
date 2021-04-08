@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -20,8 +21,10 @@ public interface ChatStateRepository extends JpaRepository<ChatStateEntity, Long
     void changeStateByIdChat(@Param("idChat") Long idChat,
                              @Param("stateName") String stateName);
 
-    @Query(value = "INSERT INTO chat_id_state (id_chat, id_state) VALUES (:idChat, SELECT id" +
-            " FROM states WHERE name = :stateName)", nativeQuery = true)
+    @Modifying
+    @Transactional
+    @Query(value = "INSERT INTO chat_id_state (id_chat, id_state) VALUES (:idChat, (SELECT id" +
+            " FROM states WHERE name = :stateName))", nativeQuery = true)
     void insertNewChatState(@Param("idChat") Long idChat,
                             @Param("stateName") String stateName);
 }

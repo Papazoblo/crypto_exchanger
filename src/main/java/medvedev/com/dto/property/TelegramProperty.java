@@ -1,4 +1,4 @@
-package medvedev.com.telegram.dto.property;
+package medvedev.com.dto.property;
 
 import lombok.Getter;
 import lombok.Setter;
