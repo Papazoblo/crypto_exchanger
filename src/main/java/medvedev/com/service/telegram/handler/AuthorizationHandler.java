@@ -1,18 +1,44 @@
 package medvedev.com.service.telegram.handler;
 
-import medvedev.com.service.telegram.MessageSenderService;
+import medvedev.com.enums.ChatState;
+import medvedev.com.service.security.ChatStateService;
+import medvedev.com.service.security.UserService;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.Message;
+
+import java.util.function.BiConsumer;
 
 @Service
 public class AuthorizationHandler extends BaseHandlerHandlerImpl {
 
-    public AuthorizationHandler(MessageSenderService senderService) {
-        super(senderService);
+    private static final int USER_LOGIN = 1;
+    private static final int USER_PASSWORD = 2;
+    private static final int VALID_LENGTH_SPLIT_COMMAND = 3;
+
+    private final UserService userService;
+    private final ChatStateService chatStateService;
+
+    public AuthorizationHandler(UserService userService, ChatStateService chatStateService) {
+        super(chatStateService);
+        this.userService = userService;
+        this.chatStateService = chatStateService;
     }
 
     @Override
-    public void run(Message message) {
-        sendMessage("Okey! It's fine", message.getChatId());
+    public void run(Message message, BiConsumer<String, Long> messageSender) {
+        if (isUserExist(message.getText())) {
+            chatStateService.updateChatState(message.getChatId(), ChatState.MAIN_MENU);
+            messageSender.accept("Правильно", message.getChatId());
+        } else {
+            messageSender.accept("Пошел нахуй", message.getChatId());
+        }
+    }
+
+    private boolean isUserExist(String line) {
+        String[] splitLine = line.split(" ");
+        if (splitLine.length != VALID_LENGTH_SPLIT_COMMAND) {
+            return false;
+        }
+        return userService.isUserAuthenticated(splitLine[USER_LOGIN], splitLine[USER_PASSWORD]);
     }
 }

@@ -1,16 +1,13 @@
 package medvedev.com.service.telegram.handler;
 
-import medvedev.com.service.telegram.MessageSenderService;
+import medvedev.com.service.security.ChatStateService;
 
 public abstract class BaseHandlerHandlerImpl implements BaseHandler {
 
-    private final MessageSenderService senderService;
+    protected final ChatStateService chatStateService;
 
-    public BaseHandlerHandlerImpl(MessageSenderService senderService) {
-        this.senderService = senderService;
+    public BaseHandlerHandlerImpl(ChatStateService chatStateService) {
+        this.chatStateService = chatStateService;
     }
 
-    protected void sendMessage(String message, Long chatId) {
-        senderService.sendMessage(message, chatId);
-    }
 }
