@@ -2,10 +2,13 @@ package medvedev.com.service.telegram;
 
 import lombok.RequiredArgsConstructor;
 import medvedev.com.dto.property.TelegramProperty;
+import medvedev.com.service.security.ChatStateService;
 import medvedev.com.service.telegram.handler.BaseHandler;
+import medvedev.com.utils.CommandListBuilder;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
+import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -23,6 +26,7 @@ public class TelegramPollingService extends TelegramLongPollingBot {
 
     private final TelegramProperty properties;
     private final TelegramMessageParserService parserService;
+    private final ChatStateService chatStateService;
 
     @Override
     public String getBotUsername() {
@@ -36,7 +40,7 @@ public class TelegramPollingService extends TelegramLongPollingBot {
 
     @Override
     public void onRegister() {
-
+        setCommandList();
     }
 
     @Override
@@ -44,7 +48,6 @@ public class TelegramPollingService extends TelegramLongPollingBot {
         onUpdatesReceived(Collections.singletonList(update));
         //TODO добавить обработку сообщений
         log.info(update.toString());
-        //log.info(commandType.name());
     }
 
     @Override
@@ -57,8 +60,20 @@ public class TelegramPollingService extends TelegramLongPollingBot {
     }
 
     private void sendMessage(String message, Long idChat) {
-        String chat = String.valueOf(idChat);
-        BotApiMethod<Message> method = new SendMessage(chat, message);
+        SendMessage method = SendMessage.builder()
+                .chatId(String.valueOf(idChat))
+                .text(message)
+                .build();
+        executeCommand(method);
+    }
+
+    private void setCommandList() {
+        SetMyCommands.SetMyCommandsBuilder commandsBuilder = SetMyCommands.builder();
+        commandsBuilder.commands(CommandListBuilder.getCommandList());
+        executeCommand(commandsBuilder.build());
+    }
+
+    private void executeCommand(BotApiMethod<?> method) {
         try {
             execute(method);
         } catch (TelegramApiException e) {

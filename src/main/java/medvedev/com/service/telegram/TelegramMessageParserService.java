@@ -1,11 +1,13 @@
 package medvedev.com.service.telegram;
 
 import lombok.RequiredArgsConstructor;
+import medvedev.com.enums.ChatState;
 import medvedev.com.service.security.ChatStateService;
 import medvedev.com.service.security.UserService;
 import medvedev.com.service.telegram.handler.AuthorizationHandler;
 import medvedev.com.service.telegram.handler.BaseHandler;
 import medvedev.com.service.telegram.handler.IncorrectCommandHandler;
+import medvedev.com.service.telegram.handler.NotAuthenticatedCommandHandler;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.Message;
 
@@ -20,17 +22,33 @@ public class TelegramMessageParserService {
 
     public BaseHandler parseMessage(Message message) {
         String commandLine = getCommandWithoutBotName(message.getText());
+
+        if (isAuthenticated(message.getChatId())) {
+            return getHandlerForAuthenticated(commandLine);
+        } else {
+            return getHandlerForNotAuthenticated(commandLine);
+        }
+    }
+
+    private BaseHandler getHandlerForAuthenticated(String commandLine) {
         if (isCommandValid(commandLine)) {
-            String command = getCommandName(commandLine);
-            switch (command) {
-                case "/start":
-                    return new AuthorizationHandler(userService, chatStateService);
-                default:
-                    return new IncorrectCommandHandler(chatStateService);
-            }
+            return new IncorrectCommandHandler(chatStateService);
         } else {
             return new IncorrectCommandHandler(chatStateService);
         }
+    }
+
+    private BaseHandler getHandlerForNotAuthenticated(String commandLine) {
+        String command = getCommandName(commandLine);
+        if (command.equals("/start")) {
+            return new AuthorizationHandler(userService, chatStateService);
+        } else {
+            return new NotAuthenticatedCommandHandler(chatStateService);
+        }
+    }
+
+    private boolean isAuthenticated(Long idChat) {
+        return chatStateService.getStateByChat(idChat) == ChatState.AUTHENTICATED;
     }
 
     private static String getCommandWithoutBotName(String command) {
@@ -53,4 +71,5 @@ public class TelegramMessageParserService {
             return "";
         }
     }
+
 }
