@@ -27,10 +27,10 @@ public class AuthorizationHandler extends BaseHandlerHandlerImpl {
     @Override
     public void run(Message message, BiConsumer<String, Long> messageSender) {
         if (isUserExist(message.getText())) {
-            chatStateService.updateChatState(message.getChatId(), ChatState.MAIN_MENU);
-            messageSender.accept("Правильно", message.getChatId());
+            chatStateService.updateChatState(message.getChatId(), ChatState.AUTHENTICATED);
+            messageSender.accept("You are successfully logged in", message.getChatId());
         } else {
-            messageSender.accept("Пошел нахуй", message.getChatId());
+            messageSender.accept("This user not exist", message.getChatId());
         }
     }
 
