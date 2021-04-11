@@ -2,6 +2,7 @@ package medvedev.com.service;
 
 import lombok.RequiredArgsConstructor;
 import medvedev.com.enums.SystemConfiguration;
+import medvedev.com.exception.MinMaxAmountIsNotValidException;
 import medvedev.com.exception.NotEnoughFundsBalanceException;
 import medvedev.com.wrapper.BigDecimalWrapper;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ public class BalanceCheckerService {
     public BigDecimalWrapper isEnoughFundsBalance(BigDecimalWrapper balance) {
         BigDecimalWrapper minAmount = systemConfigurationService.findBdByName(SystemConfiguration.MIN_AMOUNT_EXCHANGE);
         BigDecimalWrapper maxAmount = systemConfigurationService.findBdByName(SystemConfiguration.MAX_AMOUNT_EXCHANGE);
+        validatedMinMaxAmount(minAmount, maxAmount);
 
         if (balance.isLessThen(minAmount)) { // если баланс < минимума
             throw new NotEnoughFundsBalanceException(balance);
@@ -30,6 +32,13 @@ public class BalanceCheckerService {
             return (BigDecimalWrapper) balance.setScale(ROUND_ACCURACY, RoundingMode.DOWN);
         } else { // баланс больше максимума
             return maxAmount;
+        }
+    }
+
+    private void validatedMinMaxAmount(BigDecimalWrapper minAmount, BigDecimalWrapper maxAmount) {
+        if (minAmount.isGreaterThenOrEqual(maxAmount)) {
+            //TODO логи
+            throw new MinMaxAmountIsNotValidException(minAmount, maxAmount);
         }
     }
 }
