@@ -2,12 +2,10 @@ package medvedev.com.service.telegram;
 
 import lombok.RequiredArgsConstructor;
 import medvedev.com.enums.ChatState;
+import medvedev.com.service.SystemConfigurationService;
 import medvedev.com.service.security.ChatStateService;
 import medvedev.com.service.security.UserService;
-import medvedev.com.service.telegram.handler.AuthorizationHandler;
-import medvedev.com.service.telegram.handler.BaseHandler;
-import medvedev.com.service.telegram.handler.IncorrectCommandHandler;
-import medvedev.com.service.telegram.handler.NotAuthenticatedCommandHandler;
+import medvedev.com.service.telegram.handler.*;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.Message;
 
@@ -19,6 +17,7 @@ public class TelegramMessageParserService {
 
     private final UserService userService;
     private final ChatStateService chatStateService;
+    private final SystemConfigurationService systemConfigurationService;
 
     public BaseHandler parseMessage(Message message) {
         String commandLine = getCommandWithoutBotName(message.getText());
@@ -31,11 +30,19 @@ public class TelegramMessageParserService {
     }
 
     private BaseHandler getHandlerForAuthenticated(String commandLine) {
-        if (isCommandValid(commandLine)) {
-            return new IncorrectCommandHandler(chatStateService);
-        } else {
-            return new IncorrectCommandHandler(chatStateService);
+        String command = getCommandName(commandLine);
+        BaseHandler handler;
+        switch (command) {
+            case "/launched":
+                handler = new LaunchSystemHandler(systemConfigurationService, chatStateService);
+                break;
+            case "/stopped":
+                handler = new StopSystemHandler(systemConfigurationService, chatStateService);
+                break;
+            default:
+                handler = new IncorrectCommandHandler(chatStateService);
         }
+        return handler;
     }
 
     private BaseHandler getHandlerForNotAuthenticated(String commandLine) {
@@ -53,14 +60,6 @@ public class TelegramMessageParserService {
 
     private static String getCommandWithoutBotName(String command) {
         return command.split(BOT_NAME_DELIMITER)[0].trim();
-    }
-
-    private static boolean isCommandValid(String line) {
-        line = line.trim();
-        if (line.isEmpty()) {
-            return false;
-        }
-        return line.startsWith("/");
     }
 
     private static String getCommandName(String line) {

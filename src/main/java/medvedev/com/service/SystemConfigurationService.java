@@ -18,6 +18,15 @@ public class SystemConfigurationService {
         repository.save(SystemConfigurationDto.to(dto));
     }
 
+    public void setConfigurationByName(SystemConfiguration configuration,
+                                       String value) {
+        try {
+            repository.setConfigurationByName(value, configuration.name());
+        } catch (Exception ex) {
+            throw new EntityNotFoundException("System configuration", configuration.name());
+        }
+    }
+
     public String findByName(SystemConfiguration configuration) {
         return repository.findByName(configuration.name()).orElseThrow(() ->
                 new EntityNotFoundException("System configuration", configuration.name())).getValue();
@@ -34,5 +43,4 @@ public class SystemConfigurationService {
     public Integer findIntegerByName(SystemConfiguration systemConfiguration) {
         return Integer.valueOf(findByName(systemConfiguration));
     }
-
 }
