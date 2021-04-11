@@ -4,6 +4,7 @@ import com.binance.api.client.domain.account.AssetBalance;
 import medvedev.com.client.BinanceClient;
 import medvedev.com.dto.ExchangeHistoryDto;
 import medvedev.com.enums.Currency;
+import medvedev.com.exception.MinMaxAmountIsNotValidException;
 import medvedev.com.exception.NotEnoughFundsBalanceException;
 import medvedev.com.service.BalanceCheckerService;
 import medvedev.com.service.ExchangeHistoryService;
@@ -36,6 +37,8 @@ public class FiatCryptExchangeStrategy extends BaseExchangeStrategy {
             doExchange(exchangeAmount);
         } catch (NotEnoughFundsBalanceException ex) {
             System.out.print(ex.getMessage());
+        } catch (MinMaxAmountIsNotValidException ex) {
+
         }
     }
 
