@@ -21,9 +21,15 @@ public class ExchangerService {
      */
 
     private final ExchangeStrategyFactory strategyFactory;
+    private final SystemStateService systemStateService;
 
     @Scheduled(cron = "")
     public void launchExchange() {
+
+        if (systemStateService.isSystemNotLaunched()) {
+            return;
+        }
+
         //TODO лог начала обмена фиат крипта
         strategyFactory.getStrategy(OrderSide.BUY).launchExchangeAlgorithm();
         //TODO лог начала обмена крипта фиат

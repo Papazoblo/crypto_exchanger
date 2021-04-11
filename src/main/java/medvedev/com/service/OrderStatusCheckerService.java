@@ -12,11 +12,17 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class OrderStatusCheckerService {
 
+    private final SystemStateService stateService;
     private final ExchangeHistoryService historyService;
     private final BinanceClient client;
 
     @Scheduled(cron = "")
     public void checkOrderStatus() {
+
+        if (stateService.isSystemNotLaunched()) {
+            return;
+        }
+
         try {
             ExchangeHistoryDto record = historyService.getNewExchange();
             OrderStatus status = client.getOrderStatus(record.getOrderId());
