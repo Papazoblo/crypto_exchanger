@@ -3,9 +3,9 @@ package medvedev.com.service.exchangefactory;
 import com.binance.api.client.domain.account.AssetBalance;
 import medvedev.com.client.BinanceClient;
 import medvedev.com.dto.ExchangeHistoryDto;
+import medvedev.com.dto.PriceChangeDto;
 import medvedev.com.enums.Currency;
-import medvedev.com.exception.MinMaxAmountIsNotValidException;
-import medvedev.com.exception.NotEnoughFundsBalanceException;
+import medvedev.com.enums.SystemConfiguration;
 import medvedev.com.service.BalanceCheckerService;
 import medvedev.com.service.ExchangeHistoryService;
 import medvedev.com.service.SystemConfigurationService;
@@ -20,6 +20,7 @@ import java.util.List;
 public class FiatCryptExchangeStrategy extends BaseExchangeStrategy {
 
     private final BalanceCheckerService balanceCheckerService;
+    private final ExchangeHistoryService historyService;
 
     public FiatCryptExchangeStrategy(BalanceCheckerService balanceCheckerService,
                                      BinanceClient binanceClient,
@@ -27,18 +28,18 @@ public class FiatCryptExchangeStrategy extends BaseExchangeStrategy {
                                      SystemConfigurationService systemConfigurationService) {
         super(binanceClient, historyService, systemConfigurationService);
         this.balanceCheckerService = balanceCheckerService;
+        this.historyService = historyService;
     }
 
     @Override
-    public void launchExchangeAlgorithm() {
+    public void launchExchangeAlgorithm(PriceChangeDto priceChange) {
         AssetBalance balance = binanceClient.getBalanceByCurrency(Currency.USDT);
-        try {
-            BigDecimalWrapper exchangeAmount = balanceCheckerService.isEnoughFundsBalance(balance.getFree());
-            doExchange(exchangeAmount);
-        } catch (NotEnoughFundsBalanceException ex) {
-            System.out.print(ex.getMessage());
-        } catch (MinMaxAmountIsNotValidException ex) {
+        BigDecimalWrapper exchangeAmount = balanceCheckerService.isEnoughFundsBalance(balance.getFree());
 
+        if (historyService.getExchangeCount() > 0) {
+            doExchange(exchangeAmount, priceChange);
+        } else {
+            sendExchangeRequest(exchangeAmount);
         }
     }
 
@@ -47,20 +48,30 @@ public class FiatCryptExchangeStrategy extends BaseExchangeStrategy {
         binanceClient.creteBuyOrder(value);
     }
 
-    private void doExchange(BigDecimalWrapper value) {
+    private void doExchange(BigDecimalWrapper value, PriceChangeDto priceChange) {
         List<ExchangeHistoryDto> historyList = historyService.findLastExchangeFiatCryptInTimeRange();
+        double priceDifference = systemConfigurationService.findDoubleByName(
+                SystemConfiguration.MIN_DIFFERENCE_PRICE_FIAT_CRYPT);
         if (!historyList.isEmpty()) {
-            if (getLastMinRate(historyList).isGreaterThen(getLastPrice())) {
+            BigDecimalWrapper lastMinPrice = getLastMinPrice(historyList);
+            if (isDifference(priceChange.getNewPrice(), lastMinPrice.doubleValue(), priceDifference)) {
                 sendExchangeRequest(value);
-            } else {
-                //TODO отправляем запрос на обмен в телелграм
             }
         } else {
-            sendExchangeRequest(value);
+            historyService.getLastFiatCrypt().ifPresent(dto -> {
+                if (isDifference(priceChange.getNewPrice(), dto.getPrice().doubleValue(), priceDifference)) {
+                    sendExchangeRequest(value);
+                }
+            });
         }
     }
 
-    private static BigDecimalWrapper getLastMinRate(List<ExchangeHistoryDto> historyList) {
+    private boolean isDifference(BigDecimalWrapper lastPrice, double recordPrice, double priceDifference) {
+        double lastPriceInDouble = lastPrice.doubleValue();
+        return -((recordPrice * 100 / lastPriceInDouble) - 100) < priceDifference;
+    }
+
+    private static BigDecimalWrapper getLastMinPrice(List<ExchangeHistoryDto> historyList) {
         return historyList.stream()
                 .min(Comparator.comparing(ExchangeHistoryDto::getPrice))
                 .map(ExchangeHistoryDto::getPrice)

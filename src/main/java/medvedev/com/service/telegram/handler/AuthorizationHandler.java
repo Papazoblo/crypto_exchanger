@@ -19,19 +19,27 @@ public class AuthorizationHandler extends BaseHandlerHandlerImpl {
     private final ChatStateService chatStateService;
 
     public AuthorizationHandler(UserService userService, ChatStateService chatStateService) {
-        super(chatStateService);
         this.userService = userService;
         this.chatStateService = chatStateService;
     }
 
     @Override
     public void run(Message message, BiConsumer<String, Long> messageSender) {
+        if (isChatAlreadyAuthenticated(message.getChatId())) {
+            messageSender.accept("This chat already authenticated.", message.getChatId());
+            return;
+        }
+
         if (isUserExist(message.getText())) {
             chatStateService.updateChatState(message.getChatId(), ChatState.AUTHENTICATED);
             messageSender.accept("You are successfully logged in", message.getChatId());
         } else {
             messageSender.accept("This user not exist", message.getChatId());
         }
+    }
+
+    private boolean isChatAlreadyAuthenticated(Long idChat) {
+        return chatStateService.getStateByChat(idChat) == ChatState.AUTHENTICATED;
     }
 
     private boolean isUserExist(String line) {

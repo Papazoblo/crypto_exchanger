@@ -34,13 +34,13 @@ public class TelegramMessageParserService {
         BaseHandler handler;
         switch (command) {
             case "/launched":
-                handler = new LaunchSystemHandler(systemConfigurationService, chatStateService);
+                handler = new LaunchSystemHandler(systemConfigurationService);
                 break;
             case "/stopped":
-                handler = new StopSystemHandler(systemConfigurationService, chatStateService);
+                handler = new StopSystemHandler(systemConfigurationService);
                 break;
             default:
-                handler = new IncorrectCommandHandler(chatStateService);
+                handler = new IncorrectCommandHandler();
         }
         return handler;
     }
@@ -50,7 +50,7 @@ public class TelegramMessageParserService {
         if (command.equals("/start")) {
             return new AuthorizationHandler(userService, chatStateService);
         } else {
-            return new NotAuthenticatedCommandHandler(chatStateService);
+            return new NotAuthenticatedCommandHandler();
         }
     }
 

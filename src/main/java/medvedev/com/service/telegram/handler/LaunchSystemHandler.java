@@ -3,7 +3,6 @@ package medvedev.com.service.telegram.handler;
 import medvedev.com.enums.SystemConfiguration;
 import medvedev.com.exception.EntityNotFoundException;
 import medvedev.com.service.SystemConfigurationService;
-import medvedev.com.service.security.ChatStateService;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.Message;
 
@@ -16,9 +15,7 @@ public class LaunchSystemHandler extends BaseHandlerHandlerImpl {
 
     private final SystemConfigurationService systemConfigurationService;
 
-    public LaunchSystemHandler(SystemConfigurationService systemConfigurationService,
-                               ChatStateService chatStateService) {
-        super(chatStateService);
+    public LaunchSystemHandler(SystemConfigurationService systemConfigurationService) {
         this.systemConfigurationService = systemConfigurationService;
     }
 
@@ -28,6 +25,7 @@ public class LaunchSystemHandler extends BaseHandlerHandlerImpl {
             systemConfigurationService.setConfigurationByName(SystemConfiguration.SYSTEM_STATE, LAUNCHED.name());
             messageSender.accept("System successfully launched", message.getChatId());
         } catch (EntityNotFoundException ex) {
+            //TODO log
             messageSender.accept("Error system launching", message.getChatId());
         }
     }

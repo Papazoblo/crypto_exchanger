@@ -3,7 +3,6 @@ package medvedev.com.service.telegram.handler;
 import medvedev.com.enums.SystemConfiguration;
 import medvedev.com.exception.EntityNotFoundException;
 import medvedev.com.service.SystemConfigurationService;
-import medvedev.com.service.security.ChatStateService;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.Message;
 
@@ -16,9 +15,7 @@ public class StopSystemHandler extends BaseHandlerHandlerImpl {
 
     private final SystemConfigurationService systemConfigurationService;
 
-    public StopSystemHandler(SystemConfigurationService systemConfigurationService,
-                             ChatStateService chatStateService) {
-        super(chatStateService);
+    public StopSystemHandler(SystemConfigurationService systemConfigurationService) {
         this.systemConfigurationService = systemConfigurationService;
     }
 
@@ -29,6 +26,7 @@ public class StopSystemHandler extends BaseHandlerHandlerImpl {
             systemConfigurationService.setConfigurationByName(SystemConfiguration.SYSTEM_STATE, STOPPED.name());
             messageSender.accept("System successfully stopped", message.getChatId());
         } catch (EntityNotFoundException ex) {
+            //TODO log
             messageSender.accept("Error system stopping", message.getChatId());
         }
     }
