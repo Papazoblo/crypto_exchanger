@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.binance.api.client.domain.OrderStatus.NEW;
@@ -46,6 +47,15 @@ public class ExchangeHistoryService {
         return getAllOpenExchange().stream()
                 .filter(record -> record.getPrice().isLessThen(lastPrice))
                 .collect(Collectors.toList());
+    }
+
+    public long getExchangeCount() {
+        return exchangeHistoryRepository.count();
+    }
+
+    public Optional<ExchangeHistoryDto> getLastFiatCrypt() {
+        return exchangeHistoryRepository.findTopByOrderStatusAndOperationTypeOrderByDateTimeDesc(OrderStatus.FILLED,
+                OrderSide.BUY).map(ExchangeHistoryDto::from);
     }
 
     public List<ExchangeHistoryDto> getAllExchange() {

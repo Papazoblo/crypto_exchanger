@@ -19,6 +19,9 @@ public interface ExchangeHistoryRepository extends JpaRepository<ExchangeHistory
 
     Optional<ExchangeHistoryEntity> findFirstByOrderStatusIn(List<OrderStatus> statuses);
 
+    Optional<ExchangeHistoryEntity> findTopByOrderStatusAndOperationTypeOrderByDateTimeDesc(OrderStatus status,
+                                                                                            OrderSide type);
+
     List<ExchangeHistoryEntity> findAllByOperationTypeAndOrderStatusAndIdPrevExchangeIsNull(OrderSide type,
                                                                                             OrderStatus status);
 

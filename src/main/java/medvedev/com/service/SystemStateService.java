@@ -8,6 +8,7 @@ import medvedev.com.exception.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
 import static medvedev.com.enums.SystemState.LAUNCHED;
+import static medvedev.com.enums.SystemState.STOPPED;
 
 @RequiredArgsConstructor
 @Service
@@ -29,7 +30,7 @@ public class SystemStateService {
     private static SystemConfigurationDto createSystemStateConfiguration() {
         return new SystemConfigurationDto(
                 SystemConfiguration.SYSTEM_STATE.name(),
-                LAUNCHED.name()
+                STOPPED.name()
         );
     }
 }

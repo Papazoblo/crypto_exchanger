@@ -5,7 +5,7 @@ CREATE TABLE exchange_history (
     datetime         timestamp          NOT NULL,
     initial_amount   varchar(100)       NOT NULL,
     final_amount     varchar(100)       NOT NULL,
-    private          varchar(100)       NOT NULL,
+    price            varchar(100)       NOT NULL,
     order_status     varchar(30)        NOT NULL,
     id_prev_exchange bigint
 );

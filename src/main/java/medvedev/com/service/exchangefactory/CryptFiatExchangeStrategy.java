@@ -2,6 +2,7 @@ package medvedev.com.service.exchangefactory;
 
 import medvedev.com.client.BinanceClient;
 import medvedev.com.dto.ExchangeHistoryDto;
+import medvedev.com.dto.PriceChangeDto;
 import medvedev.com.enums.Currency;
 import medvedev.com.enums.SystemConfiguration;
 import medvedev.com.service.ExchangeHistoryService;
@@ -21,18 +22,16 @@ public class CryptFiatExchangeStrategy extends BaseExchangeStrategy {
     }
 
     /**
-     * 1. Берем текущий курс.
-     * 2. Делаем поиск открытых обменов
-     * 3. Сравниваем курс (что бы был больше и прибыль была минимум N% от затраченной суммы)
-     * 4. Делаем обмен
+     * 1. Достаем из базы список открытых обменов
+     * 2. Сравниваем курс (что бы был больше и прибыль была минимум N% от затраченной суммы)
+     * 3. Делаем обмен
      */
 
 
     @Override
-    public void launchExchangeAlgorithm() {
-        BigDecimalWrapper lastPrice = getLastPrice();
-        List<ExchangeHistoryDto> list = getExchangesWithDifferencePrice(
-                historyService.getOpenProfitableExchange(lastPrice), lastPrice);
+    public void launchExchangeAlgorithm(PriceChangeDto priceChange) {
+        List<ExchangeHistoryDto> openedExchanges = historyService.getOpenProfitableExchange(priceChange.getNewPrice());
+        List<ExchangeHistoryDto> list = getExchangesWithDifferencePrice(openedExchanges, priceChange.getNewPrice());
         double sumToExchange = getSumToExchange(list);
         if (!list.isEmpty() && sumToExchange > 0) {
             sendExchangeRequest(new BigDecimal(sumToExchange));
@@ -49,20 +48,20 @@ public class CryptFiatExchangeStrategy extends BaseExchangeStrategy {
                                                                      BigDecimalWrapper lastPrice) {
         double priceDifference = systemConfigurationService.findDoubleByName(SystemConfiguration.MIN_DIFFERENCE_PRICE);
         return histories.stream()
-                .filter(record -> isDifference(lastPrice, record.getPrice().doubleValue(),
-                        priceDifference))
+                .filter(record -> isDifference(lastPrice, record.getPrice().doubleValue(), priceDifference))
                 .collect(Collectors.toList());
     }
 
     private boolean isDifference(BigDecimalWrapper lastPrice, double recordPrice, double priceDifference) {
         double lastPriceInDouble = lastPrice.doubleValue();
-        return (recordPrice * 100 / lastPriceInDouble) - 100 > priceDifference;
+        return -((recordPrice * 100 / lastPriceInDouble) - 100) > priceDifference;
     }
 
     private double getSumToExchange(List<ExchangeHistoryDto> histories) {
         double sumOpenedExchange = histories.stream()
                 .mapToDouble(record -> record.getFinalAmount().doubleValue())
                 .sum();
+        sumOpenedExchange -= sumOpenedExchange * 0.02;
         return Double.parseDouble(binanceClient.getBalanceByCurrency(Currency.ETH).getFree()) > sumOpenedExchange
                 ? sumOpenedExchange : 0;
     }
