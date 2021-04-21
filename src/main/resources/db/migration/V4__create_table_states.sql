@@ -5,7 +5,5 @@ CREATE TABLE states
 );
 
 INSERT INTO states (id, name)
-VALUES (4, 'NONE'),
-(1, 'ENTER_LOGIN'),
-(2, 'ENTER_PASSWORD'),
-(3, 'MAIN_MENU');
+VALUES (1, 'NONE'),
+(3, 'AUTHENTICATED');

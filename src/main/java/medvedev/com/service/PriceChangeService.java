@@ -4,6 +4,7 @@ import com.binance.api.client.domain.market.TickerStatistics;
 import lombok.RequiredArgsConstructor;
 import medvedev.com.dto.PriceChangeDto;
 import medvedev.com.entity.PriceChangeEntity;
+import medvedev.com.enums.HavePriceChangeState;
 import medvedev.com.enums.PriceChangeState;
 import medvedev.com.repository.PriceChangeRepository;
 import org.springframework.stereotype.Service;
@@ -37,7 +38,8 @@ public class PriceChangeService {
         PriceChangeEntity entity = new PriceChangeEntity();
         entity.setOldPrice(ticker.getLastPrice());
         entity.setNewPrice(ticker.getLastPrice());
-        entity.setState(PriceChangeState.WITHOUT_CHANGES);
+        entity.setState(PriceChangeState.INCREASED);
+        entity.setHaveChanges(HavePriceChangeState.WITHOUT_CHANGES);
         return entity;
     }
 }

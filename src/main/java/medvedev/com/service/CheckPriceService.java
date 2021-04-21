@@ -4,10 +4,11 @@ import com.binance.api.client.domain.market.TickerStatistics;
 import lombok.RequiredArgsConstructor;
 import medvedev.com.client.BinanceClient;
 import medvedev.com.dto.PriceChangeDto;
+import medvedev.com.enums.HavePriceChangeState;
 import medvedev.com.enums.PriceChangeState;
-import medvedev.com.service.exchangefactory.CryptFiatExchangeStrategy;
 import medvedev.com.service.exchangefactory.ExchangeStrategy;
 import medvedev.com.service.exchangefactory.FiatCryptExchangeStrategy;
+import medvedev.com.service.telegram.TelegramPollingService;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +21,8 @@ public class CheckPriceService {
     private final ExchangeHistoryService historyService;
     private final BalanceCheckerService balanceCheckerService;
     private final SystemConfigurationService systemConfigurationService;
+    private final SystemStateService stateService;
+    private final TelegramPollingService telegramPollingService;
 
     @Scheduled(cron = "${exchange.cron.check-price}")
     public void checkPrice() {
@@ -27,16 +30,23 @@ public class CheckPriceService {
         TickerStatistics statistics = client.getPriceInfo();
         PriceChangeDto priceChange = priceChangeService.refresh(statistics);
 
+        if (stateService.isSystemNotLaunched()) {
+            return;
+        }
+
         ExchangeStrategy exchangeStrategy;
-        if (priceChange.getState() == PriceChangeState.INCREASED) {
-            exchangeStrategy = new FiatCryptExchangeStrategy(balanceCheckerService, client, historyService,
-                    systemConfigurationService);
-        } else if (priceChange.getState() == PriceChangeState.DECREASED) {
-            exchangeStrategy = new CryptFiatExchangeStrategy(client, historyService, systemConfigurationService);
+        if (priceChange.getHavePriceChangeState() == HavePriceChangeState.WITH_CHANGES) {
+            if (priceChange.getState() == PriceChangeState.INCREASED) {
+                exchangeStrategy = new FiatCryptExchangeStrategy(balanceCheckerService, client, historyService,
+                        systemConfigurationService, telegramPollingService);
+
+                exchangeStrategy.launchExchangeAlgorithm(priceChange);
+            } else {
+                //exchangeStrategy = new CryptFiatExchangeStrategy(client, historyService, systemConfigurationService);
+            }
         } else {
             return;
         }
 
-        //exchangeStrategy.launchExchangeAlgorithm(priceChange);
     }
 }

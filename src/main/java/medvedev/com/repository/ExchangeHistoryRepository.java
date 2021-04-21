@@ -17,6 +17,11 @@ import java.util.Optional;
 @Repository
 public interface ExchangeHistoryRepository extends JpaRepository<ExchangeHistoryEntity, Long> {
 
+    Optional<ExchangeHistoryEntity> findFirstByOperationTypeAndOrderStatusOrderByDateTimeDesc(OrderSide orderSide,
+                                                                                              OrderStatus orderStatus);
+
+    boolean existsByOperationTypeAndOrderStatus(OrderSide orderSide, OrderStatus orderStatus);
+
     Optional<ExchangeHistoryEntity> findFirstByOrderStatusIn(List<OrderStatus> statuses);
 
     Optional<ExchangeHistoryEntity> findTopByOrderStatusAndOperationTypeOrderByDateTimeDesc(OrderStatus status,
@@ -30,6 +35,11 @@ public interface ExchangeHistoryRepository extends JpaRepository<ExchangeHistory
 
     @Transactional
     @Modifying
-    @Query(value = "UPDATE ExchangeHistoryEntity eh SET eh = :status WHERE eh.id = :id")
+    @Query(value = "UPDATE ExchangeHistoryEntity eh SET eh.orderStatus = :status WHERE eh.id = :id")
     void alterStatusById(@Param("status") OrderStatus status, @Param("id") Long id);
+
+    @Transactional
+    @Modifying
+    @Query(value = "UPDATE ExchangeHistoryEntity eh SET eh.idPrevExchange = :idPrev WHERE eh.id IN :ids")
+    void closingOpenedExchangeById(@Param("ids") List<Long> ids, @Param("idPrev") Long idPrev);
 }

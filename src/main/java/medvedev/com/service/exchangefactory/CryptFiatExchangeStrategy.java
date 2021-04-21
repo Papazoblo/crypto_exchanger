@@ -1,5 +1,7 @@
 package medvedev.com.service.exchangefactory;
 
+import com.binance.api.client.domain.account.NewOrderResponse;
+import lombok.extern.log4j.Log4j2;
 import medvedev.com.client.BinanceClient;
 import medvedev.com.dto.ExchangeHistoryDto;
 import medvedev.com.dto.PriceChangeDto;
@@ -7,18 +9,21 @@ import medvedev.com.enums.Currency;
 import medvedev.com.enums.SystemConfiguration;
 import medvedev.com.service.ExchangeHistoryService;
 import medvedev.com.service.SystemConfigurationService;
+import medvedev.com.service.telegram.TelegramPollingService;
 import medvedev.com.wrapper.BigDecimalWrapper;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Log4j2
 public class CryptFiatExchangeStrategy extends BaseExchangeStrategy {
 
     public CryptFiatExchangeStrategy(BinanceClient binanceClient,
                                      ExchangeHistoryService historyService,
-                                     SystemConfigurationService systemConfigurationService) {
-        super(binanceClient, historyService, systemConfigurationService);
+                                     SystemConfigurationService systemConfigurationService,
+                                     TelegramPollingService telegramPollingService) {
+        super(binanceClient, historyService, systemConfigurationService, telegramPollingService);
     }
 
     /**
@@ -30,20 +35,26 @@ public class CryptFiatExchangeStrategy extends BaseExchangeStrategy {
 
     @Override
     public void launchExchangeAlgorithm(PriceChangeDto priceChange) {
+        //получили список открытых обменов у которых курс обмена МЕНЬШЕ ТЕКУЩЕГО
         List<ExchangeHistoryDto> openedExchanges = historyService.getOpenProfitableExchange(priceChange.getNewPrice());
+        //Выбираем записи у которых текущий курс БОЛЬШЕ курса обмена на N %
         List<ExchangeHistoryDto> list = getExchangesWithDifferencePrice(openedExchanges, priceChange.getNewPrice());
         double sumToExchange = getSumToExchange(list);
         if (!list.isEmpty() && sumToExchange > 0) {
-            sendExchangeRequest(new BigDecimal(sumToExchange));
+            NewOrderResponse response = sendExchangeRequest(new BigDecimal(sumToExchange));
+            ExchangeHistoryDto lastExchange = writeToHistory(response);
+            historyService.closingOpenedExchangeById(list, lastExchange);
+            telegramPollingService.sendMessage(String.format("Launch exchange ETH => USDT: amount = %s",
+                    sumToExchange));
         }
     }
 
     @Override
-    protected void sendExchangeRequest(BigDecimal value) {
-        binanceClient.createSellOrder(value);
+    protected NewOrderResponse sendExchangeRequest(BigDecimal value) {
+        log.info("Start sell exchange: " + value.toString() + " ETH");
+        return binanceClient.createSellOrder(value);
     }
 
-    //TODO надо проверить фильтр по курсу
     private List<ExchangeHistoryDto> getExchangesWithDifferencePrice(List<ExchangeHistoryDto> histories,
                                                                      BigDecimalWrapper lastPrice) {
         double priceDifference = systemConfigurationService.findDoubleByName(SystemConfiguration.MIN_DIFFERENCE_PRICE);
@@ -52,6 +63,12 @@ public class CryptFiatExchangeStrategy extends BaseExchangeStrategy {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * @param lastPrice       2500
+     * @param recordPrice     2000
+     * @param priceDifference 10%
+     * @return
+     */
     private boolean isDifference(BigDecimalWrapper lastPrice, double recordPrice, double priceDifference) {
         double lastPriceInDouble = lastPrice.doubleValue();
         return -((recordPrice * 100 / lastPriceInDouble) - 100) > priceDifference;

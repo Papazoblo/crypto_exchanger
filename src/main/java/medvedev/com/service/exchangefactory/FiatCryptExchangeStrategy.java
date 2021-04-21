@@ -1,6 +1,8 @@
 package medvedev.com.service.exchangefactory;
 
 import com.binance.api.client.domain.account.AssetBalance;
+import com.binance.api.client.domain.account.NewOrderResponse;
+import lombok.extern.log4j.Log4j2;
 import medvedev.com.client.BinanceClient;
 import medvedev.com.dto.ExchangeHistoryDto;
 import medvedev.com.dto.PriceChangeDto;
@@ -9,15 +11,19 @@ import medvedev.com.enums.SystemConfiguration;
 import medvedev.com.service.BalanceCheckerService;
 import medvedev.com.service.ExchangeHistoryService;
 import medvedev.com.service.SystemConfigurationService;
+import medvedev.com.service.telegram.TelegramPollingService;
 import medvedev.com.wrapper.BigDecimalWrapper;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.Comparator;
-import java.util.List;
+import java.math.RoundingMode;
 
 @Service
+@Log4j2
 public class FiatCryptExchangeStrategy extends BaseExchangeStrategy {
+
+    private static final int PRECISION_SIZE = 8;
+    private static final BigDecimalWrapper MIN_AMOUNT_TO_EXCHANGE = new BigDecimalWrapper(0.01);
 
     private final BalanceCheckerService balanceCheckerService;
     private final ExchangeHistoryService historyService;
@@ -25,8 +31,9 @@ public class FiatCryptExchangeStrategy extends BaseExchangeStrategy {
     public FiatCryptExchangeStrategy(BalanceCheckerService balanceCheckerService,
                                      BinanceClient binanceClient,
                                      ExchangeHistoryService historyService,
-                                     SystemConfigurationService systemConfigurationService) {
-        super(binanceClient, historyService, systemConfigurationService);
+                                     SystemConfigurationService systemConfigurationService,
+                                     TelegramPollingService telegramPollingService) {
+        super(binanceClient, historyService, systemConfigurationService, telegramPollingService);
         this.balanceCheckerService = balanceCheckerService;
         this.historyService = historyService;
     }
@@ -35,46 +42,53 @@ public class FiatCryptExchangeStrategy extends BaseExchangeStrategy {
     public void launchExchangeAlgorithm(PriceChangeDto priceChange) {
         AssetBalance balance = binanceClient.getBalanceByCurrency(Currency.USDT);
         BigDecimalWrapper exchangeAmount = balanceCheckerService.isEnoughFundsBalance(balance.getFree());
+        BigDecimalWrapper convertedValue = convertFiatToCrypt(exchangeAmount, priceChange.getNewPrice());
 
-        if (historyService.getExchangeCount() > 0) {
-            doExchange(exchangeAmount, priceChange);
+        if (convertedValue.isLessThenOrEqual(MIN_AMOUNT_TO_EXCHANGE)) {
+            log.info("Not enough funds on balance");
+            return;
+        }
+
+        if (historyService.isNotExistExchangeSell()) {
+            sendExchangeRequest(convertedValue);
         } else {
-            sendExchangeRequest(exchangeAmount);
+            doExchange(convertedValue, priceChange);
         }
     }
 
     @Override
-    protected void sendExchangeRequest(BigDecimal value) {
-        binanceClient.creteBuyOrder(value);
+    protected NewOrderResponse sendExchangeRequest(BigDecimal value) {
+        log.info("Start buy exchange: " + value.toString() + " ETH");
+        NewOrderResponse response = binanceClient.createSellOrder(value);
+        writeToHistory(response);
+        telegramPollingService.sendMessage(String.format("Launch exchange USDT => ETH: amount = %s", value.toString()));
+        return response;
     }
 
-    private void doExchange(BigDecimalWrapper value, PriceChangeDto priceChange) {
-        List<ExchangeHistoryDto> historyList = historyService.findLastExchangeFiatCryptInTimeRange();
+    private BigDecimalWrapper convertFiatToCrypt(BigDecimalWrapper value, BigDecimalWrapper price) {
+        return new BigDecimalWrapper(value.divide(price, PRECISION_SIZE, RoundingMode.DOWN).toString());
+    }
+
+    private void doExchange(BigDecimalWrapper amount, PriceChangeDto priceChange) {
+        //берем последний обмен КРИПТА ФИАТ
+        ExchangeHistoryDto lastSellExchange = historyService.findLastSellExchange();
         double priceDifference = systemConfigurationService.findDoubleByName(
                 SystemConfiguration.MIN_DIFFERENCE_PRICE_FIAT_CRYPT);
-        if (!historyList.isEmpty()) {
-            BigDecimalWrapper lastMinPrice = getLastMinPrice(historyList);
-            if (isDifference(priceChange.getNewPrice(), lastMinPrice.doubleValue(), priceDifference)) {
-                sendExchangeRequest(value);
-            }
-        } else {
-            historyService.getLastFiatCrypt().ifPresent(dto -> {
-                if (isDifference(priceChange.getNewPrice(), dto.getPrice().doubleValue(), priceDifference)) {
-                    sendExchangeRequest(value);
-                }
-            });
+
+        if (isDifference(priceChange.getNewPrice(), lastSellExchange.getPrice().doubleValue(), priceDifference)) {
+            sendExchangeRequest(amount);
         }
     }
 
+    /**
+     * @param lastPrice       1500
+     * @param recordPrice     2000
+     * @param priceDifference 10%
+     * @return
+     */
     private boolean isDifference(BigDecimalWrapper lastPrice, double recordPrice, double priceDifference) {
         double lastPriceInDouble = lastPrice.doubleValue();
-        return -((recordPrice * 100 / lastPriceInDouble) - 100) < priceDifference;
+        return (recordPrice * 100 / lastPriceInDouble) - 100 > priceDifference;
     }
 
-    private static BigDecimalWrapper getLastMinPrice(List<ExchangeHistoryDto> historyList) {
-        return historyList.stream()
-                .min(Comparator.comparing(ExchangeHistoryDto::getPrice))
-                .map(ExchangeHistoryDto::getPrice)
-                .orElse(new BigDecimalWrapper(0));
-    }
 }

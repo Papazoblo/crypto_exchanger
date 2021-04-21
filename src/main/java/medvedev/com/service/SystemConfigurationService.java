@@ -1,6 +1,7 @@
 package medvedev.com.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import medvedev.com.dto.SystemConfigurationDto;
 import medvedev.com.enums.SystemConfiguration;
 import medvedev.com.exception.EntityNotFoundException;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Log4j2
 public class SystemConfigurationService {
 
     private final SystemConfigurationRepository repository;
@@ -23,6 +25,7 @@ public class SystemConfigurationService {
         try {
             repository.setConfigurationByName(value, configuration.name());
         } catch (Exception ex) {
+            log.debug(ex);
             throw new EntityNotFoundException("System configuration", configuration.name());
         }
     }
