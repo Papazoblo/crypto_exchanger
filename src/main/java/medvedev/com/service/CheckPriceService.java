@@ -6,10 +6,10 @@ import medvedev.com.client.BinanceClient;
 import medvedev.com.dto.PriceChangeDto;
 import medvedev.com.enums.HavePriceChangeState;
 import medvedev.com.enums.PriceChangeState;
+import medvedev.com.service.exchangefactory.CryptFiatExchangeStrategy;
 import medvedev.com.service.exchangefactory.ExchangeStrategy;
 import medvedev.com.service.exchangefactory.FiatCryptExchangeStrategy;
 import medvedev.com.service.telegram.TelegramPollingService;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -24,7 +24,7 @@ public class CheckPriceService {
     private final SystemStateService stateService;
     private final TelegramPollingService telegramPollingService;
 
-    @Scheduled(cron = "${exchange.cron.check-price}")
+    //@Scheduled(cron = "${exchange.cron.check-price}")
     public void checkPrice() {
 
         TickerStatistics statistics = client.getPriceInfo();
@@ -39,14 +39,13 @@ public class CheckPriceService {
             if (priceChange.getState() == PriceChangeState.INCREASED) {
                 exchangeStrategy = new FiatCryptExchangeStrategy(balanceCheckerService, client, historyService,
                         systemConfigurationService, telegramPollingService);
-
-                exchangeStrategy.launchExchangeAlgorithm(priceChange);
             } else {
-                //exchangeStrategy = new CryptFiatExchangeStrategy(client, historyService, systemConfigurationService);
+                exchangeStrategy = new CryptFiatExchangeStrategy(client, historyService, systemConfigurationService,
+                        telegramPollingService);
             }
         } else {
             return;
         }
-
+        exchangeStrategy.launchExchangeAlgorithm(priceChange);
     }
 }
