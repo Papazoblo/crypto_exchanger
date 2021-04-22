@@ -29,7 +29,7 @@ public class BalanceCheckerService {
         if (balance.isLessThen(minAmount)) { // если баланс < минимума
             throw new NotEnoughFundsBalanceException(balance);
         } else if (balance.isLessThen(maxAmount)) { // если баланс < максимума
-            return (BigDecimalWrapper) balance.setScale(ROUND_ACCURACY, RoundingMode.DOWN);
+            return new BigDecimalWrapper(balance.setScale(ROUND_ACCURACY, RoundingMode.DOWN).toString());
         } else { // баланс больше максимума
             return maxAmount;
         }

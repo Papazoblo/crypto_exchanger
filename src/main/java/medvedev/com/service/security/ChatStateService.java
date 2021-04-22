@@ -1,9 +1,13 @@
 package medvedev.com.service.security;
 
 import lombok.RequiredArgsConstructor;
+import medvedev.com.entity.ChatStateEntity;
 import medvedev.com.enums.ChatState;
 import medvedev.com.repository.ChatStateRepository;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -18,5 +22,12 @@ public class ChatStateService {
     public void updateChatState(Long idChat, ChatState state) {
         repository.findByIdChat(idChat).ifPresentOrElse(entity -> repository.changeStateByIdChat(idChat, state.name()),
                 () -> repository.insertNewChatState(idChat, state.name()));
+    }
+
+    public List<Long> getAuthenticatedChats() {
+        return repository.findAllByState(ChatState.AUTHENTICATED).stream()
+                .mapToLong(ChatStateEntity::getIdChat)
+                .boxed()
+                .collect(Collectors.toList());
     }
 }

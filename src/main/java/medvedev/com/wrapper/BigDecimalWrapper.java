@@ -16,6 +16,10 @@ public class BigDecimalWrapper extends BigDecimal {
         super(val);
     }
 
+    public BigDecimalWrapper(double val) {
+        super(val);
+    }
+
     public boolean isLessThen(BigDecimal val) {
         return compareTo(val) == LESS;
     }
