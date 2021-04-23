@@ -15,19 +15,19 @@ import java.time.LocalDateTime;
 
 import static org.mockito.Mockito.*;
 
-public class OrderStatusCheckerServiceTest {
+public class CheckOrderStatusServiceTest {
 
     private SystemStateService systemStateService;
     private ExchangeHistoryService exchangeHistoryService;
     private BinanceClient binanceClient;
-    private OrderStatusCheckerService service;
+    private CheckOrderStatusService service;
 
     @BeforeEach
     void setUp() {
         systemStateService = mock(SystemStateService.class);
         exchangeHistoryService = mock(ExchangeHistoryService.class);
         binanceClient = mock(BinanceClient.class);
-        service = new OrderStatusCheckerService(systemStateService, exchangeHistoryService, binanceClient);
+        service = new CheckOrderStatusService(systemStateService, exchangeHistoryService, binanceClient);
     }
 
     @Nested
