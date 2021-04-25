@@ -6,8 +6,8 @@ import medvedev.com.enums.HavePriceChangeState;
 import medvedev.com.enums.PriceChangeState;
 import medvedev.com.exception.NoSuitableStrategyException;
 import medvedev.com.service.BalanceCheckerService;
+import medvedev.com.service.CheckPriceDifferenceService;
 import medvedev.com.service.ExchangeHistoryService;
-import medvedev.com.service.SystemConfigurationService;
 import medvedev.com.service.telegram.TelegramPollingService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -21,7 +21,7 @@ public class ExchangeStrategyFactoryTest {
 
     private ExchangeHistoryService historyService;
     private BalanceCheckerService balanceCheckerService;
-    private SystemConfigurationService systemConfigurationService;
+    private CheckPriceDifferenceService checkPriceDifferenceService;
     private TelegramPollingService telegramPollingService;
     private BinanceClient binanceClient;
     private ExchangeStrategyFactory factory;
@@ -30,11 +30,11 @@ public class ExchangeStrategyFactoryTest {
     void setUp() {
         historyService = mock(ExchangeHistoryService.class);
         balanceCheckerService = mock(BalanceCheckerService.class);
-        systemConfigurationService = mock(SystemConfigurationService.class);
+        checkPriceDifferenceService = mock(CheckPriceDifferenceService.class);
         telegramPollingService = mock(TelegramPollingService.class);
         binanceClient = mock(BinanceClient.class);
-        factory = new ExchangeStrategyFactory(historyService, balanceCheckerService,
-                systemConfigurationService, telegramPollingService, binanceClient);
+        factory = new ExchangeStrategyFactory(historyService, balanceCheckerService, checkPriceDifferenceService,
+                telegramPollingService, binanceClient);
     }
 
     @Nested

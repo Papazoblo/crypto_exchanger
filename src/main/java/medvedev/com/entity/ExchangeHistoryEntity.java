@@ -46,7 +46,7 @@ public class ExchangeHistoryEntity {
 
     public static ExchangeHistoryEntity from(NewOrderResponse response) {
         ExchangeHistoryEntity entity = new ExchangeHistoryEntity();
-        entity.setDateTime(LocalDateTime.from(new Timestamp(response.getTransactTime()).toInstant()));
+        entity.setDateTime(new Timestamp(response.getTransactTime()).toLocalDateTime());
         entity.setInitialAmount(response.getOrigQty());
         entity.setFinalAmount(response.getExecutedQty());
         entity.setPrice(response.getPrice());
