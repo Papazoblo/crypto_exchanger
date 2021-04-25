@@ -19,7 +19,7 @@ import static org.mockito.Mockito.*;
 public class CheckPriceServiceTest {
 
     private ExchangeHistoryService exchangeHistoryService;
-    private SystemConfigurationService systemConfigurationService;
+    private CheckPriceDifferenceService checkPriceDifferenceService;
     private TelegramPollingService telegramPollingService;
     private BinanceClient client;
     private PriceChangeService priceChangeService;
@@ -30,7 +30,7 @@ public class CheckPriceServiceTest {
     @BeforeEach
     void setUp() {
         exchangeHistoryService = mock(ExchangeHistoryService.class);
-        systemConfigurationService = mock(SystemConfigurationService.class);
+        checkPriceDifferenceService = mock(CheckPriceDifferenceService.class);
         telegramPollingService = mock(TelegramPollingService.class);
         client = mock(BinanceClient.class);
         priceChangeService = mock(PriceChangeService.class);
@@ -67,7 +67,7 @@ public class CheckPriceServiceTest {
         @Test
         void shouldLaunchExchangeStrategy() {
             ExchangeStrategy strategy = new CryptFiatExchangeStrategy(client, exchangeHistoryService,
-                    systemConfigurationService, telegramPollingService);
+                    telegramPollingService, checkPriceDifferenceService);
             AssetBalance balance = new AssetBalance();
             balance.setFree("0.0");
 
