@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 @Log4j2
-public class OrderStatusCheckerService {
+public class CheckOrderStatusService {
 
     private final SystemStateService stateService;
     private final ExchangeHistoryService historyService;

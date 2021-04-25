@@ -7,10 +7,9 @@ import medvedev.com.client.BinanceClient;
 import medvedev.com.dto.ExchangeHistoryDto;
 import medvedev.com.dto.PriceChangeDto;
 import medvedev.com.enums.Currency;
-import medvedev.com.enums.SystemConfiguration;
 import medvedev.com.service.BalanceCheckerService;
+import medvedev.com.service.CheckPriceDifferenceService;
 import medvedev.com.service.ExchangeHistoryService;
-import medvedev.com.service.SystemConfigurationService;
 import medvedev.com.service.telegram.TelegramPollingService;
 import medvedev.com.wrapper.BigDecimalWrapper;
 import org.springframework.stereotype.Service;
@@ -31,9 +30,10 @@ public class FiatCryptExchangeStrategy extends BaseExchangeStrategy {
     public FiatCryptExchangeStrategy(BalanceCheckerService balanceCheckerService,
                                      BinanceClient binanceClient,
                                      ExchangeHistoryService historyService,
-                                     SystemConfigurationService systemConfigurationService,
-                                     TelegramPollingService telegramPollingService) {
-        super(binanceClient, historyService, systemConfigurationService, telegramPollingService);
+                                     TelegramPollingService telegramPollingService,
+                                     CheckPriceDifferenceService differenceService) {
+        super(binanceClient, historyService, telegramPollingService,
+                differenceService);
         this.balanceCheckerService = balanceCheckerService;
         this.historyService = historyService;
     }
@@ -72,23 +72,10 @@ public class FiatCryptExchangeStrategy extends BaseExchangeStrategy {
     private void doExchange(BigDecimalWrapper amount, PriceChangeDto priceChange) {
         //берем последний обмен КРИПТА ФИАТ
         ExchangeHistoryDto lastSellExchange = historyService.findLastSellExchange();
-        double priceDifference = systemConfigurationService.findDoubleByName(
-                SystemConfiguration.MIN_DIFFERENCE_PRICE_FIAT_CRYPT);
 
-        if (isDifference(priceChange.getNewPrice(), lastSellExchange.getPrice().doubleValue(), priceDifference)) {
+        if (differenceService.isPriceDecreased(priceChange.getNewPrice(), lastSellExchange.getPrice().doubleValue())) {
             sendExchangeRequest(amount);
         }
-    }
-
-    /**
-     * @param lastPrice       1500
-     * @param recordPrice     2000
-     * @param priceDifference 10%
-     * @return
-     */
-    private boolean isDifference(BigDecimalWrapper lastPrice, double recordPrice, double priceDifference) {
-        double lastPriceInDouble = lastPrice.doubleValue();
-        return (recordPrice * 100 / lastPriceInDouble) - 100 > priceDifference;
     }
 
 }

@@ -2,29 +2,26 @@ package medvedev.com.service;
 
 import com.binance.api.client.domain.market.TickerStatistics;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import medvedev.com.client.BinanceClient;
 import medvedev.com.dto.PriceChangeDto;
-import medvedev.com.enums.HavePriceChangeState;
-import medvedev.com.enums.PriceChangeState;
-import medvedev.com.service.exchangefactory.CryptFiatExchangeStrategy;
+import medvedev.com.exception.NoSuitableStrategyException;
 import medvedev.com.service.exchangefactory.ExchangeStrategy;
-import medvedev.com.service.exchangefactory.FiatCryptExchangeStrategy;
-import medvedev.com.service.telegram.TelegramPollingService;
+import medvedev.com.service.exchangefactory.ExchangeStrategyFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+@Log4j2
 @Service
 @RequiredArgsConstructor
 public class CheckPriceService {
 
     private final BinanceClient client;
     private final PriceChangeService priceChangeService;
-    private final ExchangeHistoryService historyService;
-    private final BalanceCheckerService balanceCheckerService;
-    private final SystemConfigurationService systemConfigurationService;
     private final SystemStateService stateService;
-    private final TelegramPollingService telegramPollingService;
+    private final ExchangeStrategyFactory exchangeStrategyFactory;
 
-    //@Scheduled(cron = "${exchange.cron.check-price}")
+    @Scheduled(cron = "${exchange.cron.check-price}")
     public void checkPrice() {
 
         TickerStatistics statistics = client.getPriceInfo();
@@ -34,18 +31,11 @@ public class CheckPriceService {
             return;
         }
 
-        ExchangeStrategy exchangeStrategy;
-        if (priceChange.getHavePriceChangeState() == HavePriceChangeState.WITH_CHANGES) {
-            if (priceChange.getState() == PriceChangeState.INCREASED) {
-                exchangeStrategy = new FiatCryptExchangeStrategy(balanceCheckerService, client, historyService,
-                        systemConfigurationService, telegramPollingService);
-            } else {
-                exchangeStrategy = new CryptFiatExchangeStrategy(client, historyService, systemConfigurationService,
-                        telegramPollingService);
-            }
-        } else {
-            return;
+        try {
+            ExchangeStrategy strategy = exchangeStrategyFactory.getExchangeStrategy(priceChange);
+            strategy.launchExchangeAlgorithm(priceChange);
+        } catch (NoSuitableStrategyException ex) {
+            log.info(ex.getMessage());
         }
-        exchangeStrategy.launchExchangeAlgorithm(priceChange);
     }
 }
