@@ -6,9 +6,8 @@ import medvedev.com.client.BinanceClient;
 import medvedev.com.dto.ExchangeHistoryDto;
 import medvedev.com.dto.PriceChangeDto;
 import medvedev.com.enums.Currency;
-import medvedev.com.enums.SystemConfiguration;
+import medvedev.com.service.CheckPriceDifferenceService;
 import medvedev.com.service.ExchangeHistoryService;
-import medvedev.com.service.SystemConfigurationService;
 import medvedev.com.service.telegram.TelegramPollingService;
 import medvedev.com.wrapper.BigDecimalWrapper;
 
@@ -21,9 +20,9 @@ public class CryptFiatExchangeStrategy extends BaseExchangeStrategy {
 
     public CryptFiatExchangeStrategy(BinanceClient binanceClient,
                                      ExchangeHistoryService historyService,
-                                     SystemConfigurationService systemConfigurationService,
-                                     TelegramPollingService telegramPollingService) {
-        super(binanceClient, historyService, systemConfigurationService, telegramPollingService);
+                                     TelegramPollingService telegramPollingService,
+                                     CheckPriceDifferenceService differenceService) {
+        super(binanceClient, historyService, telegramPollingService, differenceService);
     }
 
     /**
@@ -57,21 +56,9 @@ public class CryptFiatExchangeStrategy extends BaseExchangeStrategy {
 
     private List<ExchangeHistoryDto> getExchangesWithDifferencePrice(List<ExchangeHistoryDto> histories,
                                                                      BigDecimalWrapper lastPrice) {
-        double priceDifference = systemConfigurationService.findDoubleByName(SystemConfiguration.MIN_DIFFERENCE_PRICE);
         return histories.stream()
-                .filter(record -> isDifference(lastPrice, record.getPrice().doubleValue(), priceDifference))
+                .filter(record -> differenceService.isPriceIncreased(lastPrice, record.getPrice().doubleValue()))
                 .collect(Collectors.toList());
-    }
-
-    /**
-     * @param lastPrice       2500
-     * @param recordPrice     2000
-     * @param priceDifference 10%
-     * @return
-     */
-    private boolean isDifference(BigDecimalWrapper lastPrice, double recordPrice, double priceDifference) {
-        double lastPriceInDouble = lastPrice.doubleValue();
-        return -((recordPrice * 100 / lastPriceInDouble) - 100) > priceDifference;
     }
 
     private double getSumToExchange(List<ExchangeHistoryDto> histories) {

@@ -3,13 +3,15 @@ package medvedev.com.service.exchangefactory;
 import com.binance.api.client.domain.OrderSide;
 import com.binance.api.client.domain.OrderStatus;
 import com.binance.api.client.domain.account.AssetBalance;
+import com.binance.api.client.domain.account.NewOrderResponse;
 import com.binance.api.client.domain.market.TickerStatistics;
 import medvedev.com.client.BinanceClient;
 import medvedev.com.dto.ExchangeHistoryDto;
 import medvedev.com.dto.PriceChangeDto;
 import medvedev.com.enums.Currency;
+import medvedev.com.service.CheckPriceDifferenceService;
 import medvedev.com.service.ExchangeHistoryService;
-import medvedev.com.service.SystemConfigurationService;
+import medvedev.com.service.telegram.TelegramPollingService;
 import medvedev.com.wrapper.BigDecimalWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -20,23 +22,24 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static medvedev.com.enums.SystemConfiguration.MIN_DIFFERENCE_PRICE;
 import static org.mockito.Mockito.*;
 
 public class CryptFiatExchangeStrategyTest {
 
     private BinanceClient client;
     private ExchangeHistoryService exchangeHistoryService;
-    private SystemConfigurationService systemConfigurationService;
+    private CheckPriceDifferenceService checkPriceDifferenceService;
+    private TelegramPollingService telegramPollingService;
     private CryptFiatExchangeStrategy strategy;
 
     @BeforeEach
     void setUp() {
         client = mock(BinanceClient.class);
         exchangeHistoryService = mock(ExchangeHistoryService.class);
-        systemConfigurationService = mock(SystemConfigurationService.class);
-        strategy = new CryptFiatExchangeStrategy(client, exchangeHistoryService,
-                systemConfigurationService);
+        checkPriceDifferenceService = mock(CheckPriceDifferenceService.class);
+        telegramPollingService = mock(TelegramPollingService.class);
+        strategy = new CryptFiatExchangeStrategy(client, exchangeHistoryService, telegramPollingService,
+                checkPriceDifferenceService);
     }
 
     @Nested
@@ -65,11 +68,10 @@ public class CryptFiatExchangeStrategyTest {
             void setUp() {
                 minDifferencePrice = 5.0;
                 priceChangeDto = new PriceChangeDto();
+                priceChangeDto.setNewPrice(new BigDecimalWrapper("1020"));
                 balance = new AssetBalance();
                 balance.setFree("1.0");
 
-                when(systemConfigurationService.findDoubleByName(MIN_DIFFERENCE_PRICE))
-                        .thenReturn(minDifferencePrice);
             }
 
             @Test
@@ -88,15 +90,47 @@ public class CryptFiatExchangeStrategyTest {
 
                 @Test
                 void shouldReturnWhenListIsNotEmpty() {
+                    String sumToExchange = "1.96";
+                    String price1 = "990";
+                    String price2 = "1000";
+                    String price3 = "1100";
+                    BigDecimalWrapper lastPrice = new BigDecimalWrapper(1020);
+                    AssetBalance balance = new AssetBalance();
+                    balance.setFree("2");
+                    NewOrderResponse response = new NewOrderResponse();
+                    response.setClientOrderId("1");
+                    response.setCummulativeQuoteQty("1");
+                    response.setExecutedQty("1");
+                    response.setPrice("1");
+                    response.setTransactTime(1619337129000L);
+                    ExchangeHistoryDto historyDto = new ExchangeHistoryDto(
+                            1L, 2L, OrderSide.SELL, LocalDateTime.now(), new BigDecimalWrapper(1),
+                            new BigDecimalWrapper(2), new BigDecimalWrapper(3), OrderStatus.FILLED,
+                            null);
+
                     List<ExchangeHistoryDto> profitableList = Arrays.asList(
-                            generateHistoryDto("990"),
-                            generateHistoryDto("1000"),
-                            generateHistoryDto("1050"),
-                            generateHistoryDto("1100")
+                            generateHistoryDto(price1),
+                            generateHistoryDto(price2),
+                            generateHistoryDto(price3)
                     );
 
                     when(exchangeHistoryService.getOpenProfitableExchange(lastPrice))
                             .thenReturn(profitableList);
+                    when(checkPriceDifferenceService.isPriceIncreased(lastPrice,
+                            Double.parseDouble(price1))).thenReturn(true);
+                    when(checkPriceDifferenceService.isPriceIncreased(lastPrice,
+                            Double.parseDouble(price2))).thenReturn(true);
+                    when(checkPriceDifferenceService.isPriceIncreased(lastPrice,
+                            Double.parseDouble(price3))).thenReturn(false);
+                    when(client.getBalanceByCurrency(Currency.ETH))
+                            .thenReturn(balance);
+                    when(client.createSellOrder(any()))
+                            .thenReturn(response);
+                    when(exchangeHistoryService.save(any())).thenReturn(historyDto);
+
+                    strategy.launchExchangeAlgorithm(priceChangeDto);
+                    verify(exchangeHistoryService).closingOpenedExchangeById(any(), any());
+                    verify(telegramPollingService).sendMessage(any());
                 }
             }
         }
@@ -104,7 +138,7 @@ public class CryptFiatExchangeStrategyTest {
 
     private static ExchangeHistoryDto generateHistoryDto(String price) {
         return new ExchangeHistoryDto(null, null, OrderSide.SELL, LocalDateTime.now(),
-                null, null, new BigDecimalWrapper(price),
+                null, new BigDecimalWrapper(1), new BigDecimalWrapper(price),
                 OrderStatus.FILLED, null);
     }
 }
