@@ -21,7 +21,7 @@ import java.math.RoundingMode;
 @Log4j2
 public class FiatCryptExchangeStrategy extends BaseExchangeStrategy {
 
-    private static final int PRECISION_SIZE = 8;
+    private static final int PRECISION_SIZE = 4;
     private static final BigDecimalWrapper MIN_AMOUNT_TO_EXCHANGE = new BigDecimalWrapper(0.01);
 
     private final BalanceCheckerService balanceCheckerService;
@@ -50,17 +50,17 @@ public class FiatCryptExchangeStrategy extends BaseExchangeStrategy {
         }
 
         if (historyService.isNotExistExchangeSell()) {
-            sendExchangeRequest(convertedValue);
+            sendExchangeRequest(convertedValue, priceChange);
         } else {
             doExchange(convertedValue, priceChange);
         }
     }
 
     @Override
-    protected NewOrderResponse sendExchangeRequest(BigDecimal value) {
+    protected NewOrderResponse sendExchangeRequest(BigDecimal value, PriceChangeDto priceChange) {
         log.info("Start buy exchange: " + value.toString() + " ETH");
-        NewOrderResponse response = binanceClient.createSellOrder(value);
-        writeToHistory(response);
+        NewOrderResponse response = binanceClient.createBuyOrder(value);
+        writeToHistory(response, priceChange);
         telegramPollingService.sendMessage(String.format("Launch exchange USDT => ETH: amount = %s", value.toString()));
         return response;
     }
@@ -74,7 +74,7 @@ public class FiatCryptExchangeStrategy extends BaseExchangeStrategy {
         ExchangeHistoryDto lastSellExchange = historyService.findLastSellExchange();
 
         if (differenceService.isPriceDecreased(priceChange.getNewPrice(), lastSellExchange.getPrice().doubleValue())) {
-            sendExchangeRequest(amount);
+            sendExchangeRequest(amount, priceChange);
         }
     }
 

@@ -2,6 +2,7 @@ package medvedev.com.service;
 
 import com.binance.api.client.domain.market.TickerStatistics;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import medvedev.com.dto.PriceChangeDto;
 import medvedev.com.entity.PriceChangeEntity;
 import medvedev.com.enums.HavePriceChangeState;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Log4j2
 public class PriceChangeService {
 
     private final PriceChangeRepository repository;
@@ -19,6 +21,8 @@ public class PriceChangeService {
         PriceChangeEntity priceChangeEntity = repository.findFirstById()
                 .map(price -> updatePriceChangeEntity(ticker, price))
                 .orElse(createPriceChangeEntity(ticker));
+        log.info(String.format("%s => %s, %s, %s", priceChangeEntity.getOldPrice(), priceChangeEntity.getNewPrice(),
+                priceChangeEntity.getState(), priceChangeEntity.getHaveChanges()));
         repository.save(priceChangeEntity);
         return PriceChangeDto.from(priceChangeEntity);
     }

@@ -1,6 +1,6 @@
 CREATE TABLE states
 (
-    id        smallint PRIMARY KEY NOT NULL,
+    id        smallserial PRIMARY KEY NOT NULL,
     name      varchar(30)          NOT NULL
 );
 

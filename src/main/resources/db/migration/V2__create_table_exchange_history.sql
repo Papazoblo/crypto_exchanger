@@ -1,5 +1,5 @@
 CREATE TABLE exchange_history (
-    id               bigint PRIMARY KEY NOT NULL,
+    id               bigserial PRIMARY KEY NOT NULL,
     order_id         bigint             NOT NULL,
     type             varchar(20)        NOT NULL,
     datetime         timestamp          NOT NULL,

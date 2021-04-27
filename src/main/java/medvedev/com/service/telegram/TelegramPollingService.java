@@ -60,9 +60,7 @@ public class TelegramPollingService extends TelegramLongPollingBot {
     }
 
     public void sendMessage(String message) {
-        chatStateService.getAuthenticatedChats().forEach(chat -> {
-            sendMessage(message, chat);
-        });
+        chatStateService.getAuthenticatedChats().forEach(chat -> sendMessage(message, chat));
     }
 
     private void sendMessage(String message, Long idChat) {

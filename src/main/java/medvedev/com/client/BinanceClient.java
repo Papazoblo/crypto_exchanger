@@ -32,7 +32,7 @@ public class BinanceClient {
         return client.get24HrPriceStatistics(property.getSymbol());
     }
 
-    public NewOrderResponse creteBuyOrder(BigDecimal quantity) {
+    public NewOrderResponse createBuyOrder(BigDecimal quantity) {
         return createNewOrder(NewOrder.marketBuy(property.getSymbol(), quantity.toString()));
     }
 

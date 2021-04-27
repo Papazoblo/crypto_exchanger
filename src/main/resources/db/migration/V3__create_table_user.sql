@@ -1,6 +1,6 @@
 CREATE TABLE users
 (
-    id        smallint PRIMARY KEY NOT NULL,
+    id        smallserial PRIMARY KEY NOT NULL,
     login     varchar(20)          NOT NULL,
     password  varchar(100)         NOT NULL
 );

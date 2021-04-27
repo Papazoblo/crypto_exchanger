@@ -12,11 +12,14 @@ import medvedev.com.service.telegram.TelegramPollingService;
 import medvedev.com.wrapper.BigDecimalWrapper;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Log4j2
 public class CryptFiatExchangeStrategy extends BaseExchangeStrategy {
+
+    private static final int PRECISION_SIZE = 4;
 
     public CryptFiatExchangeStrategy(BinanceClient binanceClient,
                                      ExchangeHistoryService historyService,
@@ -40,8 +43,9 @@ public class CryptFiatExchangeStrategy extends BaseExchangeStrategy {
         List<ExchangeHistoryDto> list = getExchangesWithDifferencePrice(openedExchanges, priceChange.getNewPrice());
         double sumToExchange = getSumToExchange(list);
         if (!list.isEmpty() && sumToExchange > 0) {
-            NewOrderResponse response = sendExchangeRequest(new BigDecimal(sumToExchange));
-            ExchangeHistoryDto lastExchange = writeToHistory(response);
+            NewOrderResponse response = sendExchangeRequest(
+                    new BigDecimal(sumToExchange).setScale(PRECISION_SIZE, RoundingMode.DOWN), priceChange);
+            ExchangeHistoryDto lastExchange = writeToHistory(response, priceChange);
             historyService.closingOpenedExchangeById(list, lastExchange);
             telegramPollingService.sendMessage(String.format("Launch exchange ETH => USDT: amount = %s",
                     sumToExchange));
@@ -49,7 +53,7 @@ public class CryptFiatExchangeStrategy extends BaseExchangeStrategy {
     }
 
     @Override
-    protected NewOrderResponse sendExchangeRequest(BigDecimal value) {
+    protected NewOrderResponse sendExchangeRequest(BigDecimal value, PriceChangeDto priceChange) {
         log.info("Start sell exchange: " + value.toString() + " ETH");
         return binanceClient.createSellOrder(value);
     }
@@ -65,7 +69,7 @@ public class CryptFiatExchangeStrategy extends BaseExchangeStrategy {
         double sumOpenedExchange = histories.stream()
                 .mapToDouble(record -> record.getFinalAmount().doubleValue())
                 .sum();
-        sumOpenedExchange -= sumOpenedExchange * 0.02;
+        sumOpenedExchange -= sumOpenedExchange * 0.005;
         return Double.parseDouble(binanceClient.getBalanceByCurrency(Currency.ETH).getFree()) > sumOpenedExchange
                 ? sumOpenedExchange : 0;
     }

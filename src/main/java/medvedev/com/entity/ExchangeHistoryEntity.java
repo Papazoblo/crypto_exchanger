@@ -4,6 +4,7 @@ import com.binance.api.client.domain.OrderSide;
 import com.binance.api.client.domain.OrderStatus;
 import com.binance.api.client.domain.account.NewOrderResponse;
 import lombok.Data;
+import medvedev.com.dto.PriceChangeDto;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
@@ -44,12 +45,12 @@ public class ExchangeHistoryEntity {
     @Column(name = "id_prev_exchange")
     private Long idPrevExchange;
 
-    public static ExchangeHistoryEntity from(NewOrderResponse response) {
+    public static ExchangeHistoryEntity from(NewOrderResponse response, PriceChangeDto priceChange) {
         ExchangeHistoryEntity entity = new ExchangeHistoryEntity();
         entity.setDateTime(new Timestamp(response.getTransactTime()).toLocalDateTime());
         entity.setInitialAmount(response.getOrigQty());
         entity.setFinalAmount(response.getExecutedQty());
-        entity.setPrice(response.getPrice());
+        entity.setPrice(priceChange.getNewPrice().toString());
         entity.setOperationType(response.getSide());
         entity.setOrderId(response.getOrderId());
         entity.setOrderStatus(response.getStatus());
