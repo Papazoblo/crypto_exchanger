@@ -1,6 +1,7 @@
 package medvedev.com.service.telegram;
 
 import lombok.RequiredArgsConstructor;
+import medvedev.com.client.BinanceClient;
 import medvedev.com.enums.ChatState;
 import medvedev.com.service.SystemConfigurationService;
 import medvedev.com.service.security.ChatStateService;
@@ -18,6 +19,7 @@ public class TelegramMessageParserService {
     private final UserService userService;
     private final ChatStateService chatStateService;
     private final SystemConfigurationService systemConfigurationService;
+    private final BinanceClient binanceClient;
 
     public BaseHandler parseMessage(Message message) {
         String commandLine = getCommandWithoutBotName(message.getText());
@@ -38,6 +40,12 @@ public class TelegramMessageParserService {
                 break;
             case "/stopped":
                 handler = new StopSystemHandler(systemConfigurationService);
+                break;
+            case "/balance":
+                handler = new CurrentBalanceHandler(binanceClient);
+                break;
+            case "/price":
+                handler = new CurrentPriceHandler(binanceClient);
                 break;
             default:
                 handler = new IncorrectCommandHandler();

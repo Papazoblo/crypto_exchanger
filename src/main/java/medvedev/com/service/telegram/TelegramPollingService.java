@@ -8,6 +8,7 @@ import medvedev.com.utils.CommandListBuilder;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
+import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -66,6 +67,7 @@ public class TelegramPollingService extends TelegramLongPollingBot {
     private void sendMessage(String message, Long idChat) {
         SendMessage method = SendMessage.builder()
                 .chatId(String.valueOf(idChat))
+                .parseMode(ParseMode.MARKDOWN)
                 .text(message)
                 .build();
         executeCommand(method);

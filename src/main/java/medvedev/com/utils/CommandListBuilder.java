@@ -13,7 +13,9 @@ public class CommandListBuilder {
         return Arrays.asList(
                 createCommand("/start", "Authenticated command"),
                 createCommand("/launched", "Launch service"),
-                createCommand("/stopped", "Stop service")
+                createCommand("/stopped", "Stop service"),
+                createCommand("/balance", "Return current balance"),
+                createCommand("/price", "Return current price ")
         );
     }
 
