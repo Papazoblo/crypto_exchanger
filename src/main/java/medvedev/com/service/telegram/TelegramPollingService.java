@@ -47,8 +47,6 @@ public class TelegramPollingService extends TelegramLongPollingBot {
     @Override
     public void onUpdateReceived(Update update) {
         onUpdatesReceived(Collections.singletonList(update));
-        //TODO добавить обработку сообщений
-        log.info(update.toString());
     }
 
     @Override
@@ -56,8 +54,6 @@ public class TelegramPollingService extends TelegramLongPollingBot {
         Message message = updates.get(0).getMessage();
         BaseHandler handler = parserService.parseMessage(message);
         handler.run(message, this::sendMessage);
-        //TODO добавить обработку сообщений
-        log.info(updates.toString());
     }
 
     public void sendMessage(String message) {

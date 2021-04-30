@@ -11,11 +11,13 @@ public class CommandListBuilder {
 
     public static List<BotCommand> getCommandList() {
         return Arrays.asList(
-                createCommand("/start", "Authenticated command"),
+                createCommand("/price", "Return current price "),
+                createCommand("/balance", "Return current balance"),
+                createCommand("/fiatcrypt", "Set fiat-crypt percent difference"),
+                createCommand("/cryptfiat", "Set crypt-fiat percent difference"),
                 createCommand("/launched", "Launch service"),
                 createCommand("/stopped", "Stop service"),
-                createCommand("/balance", "Return current balance"),
-                createCommand("/price", "Return current price ")
+                createCommand("/start", "Authenticated command")
         );
     }
 

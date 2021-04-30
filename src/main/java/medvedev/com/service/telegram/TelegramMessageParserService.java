@@ -47,6 +47,10 @@ public class TelegramMessageParserService {
             case "/price":
                 handler = new CurrentPriceHandler(binanceClient);
                 break;
+            case "/cryptfiat":
+            case "/fiatcrypt":
+                handler = new ChangePricePercentDifferenceHandler(systemConfigurationService);
+                break;
             default:
                 handler = new IncorrectCommandHandler();
         }

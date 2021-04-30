@@ -69,7 +69,7 @@ public class CryptFiatExchangeStrategy extends BaseExchangeStrategy {
         double sumOpenedExchange = histories.stream()
                 .mapToDouble(record -> record.getFinalAmount().doubleValue())
                 .sum();
-        sumOpenedExchange -= sumOpenedExchange * 0.005;
+        sumOpenedExchange -= sumOpenedExchange * 0.003;
         return Double.parseDouble(binanceClient.getBalanceByCurrency(Currency.ETH).getFree()) > sumOpenedExchange
                 ? sumOpenedExchange : 0;
     }
