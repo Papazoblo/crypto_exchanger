@@ -3,6 +3,7 @@ package medvedev.com.entity;
 import com.binance.api.client.domain.OrderSide;
 import com.binance.api.client.domain.OrderStatus;
 import com.binance.api.client.domain.account.NewOrderResponse;
+import com.binance.api.client.domain.account.Order;
 import lombok.Data;
 import medvedev.com.dto.PriceChangeDto;
 
@@ -54,6 +55,18 @@ public class ExchangeHistoryEntity {
         entity.setOperationType(response.getSide());
         entity.setOrderId(response.getOrderId());
         entity.setOrderStatus(response.getStatus());
+        return entity;
+    }
+
+    public static ExchangeHistoryEntity from(Order order) {
+        ExchangeHistoryEntity entity = new ExchangeHistoryEntity();
+        entity.setDateTime(new Timestamp(order.getTime()).toLocalDateTime());
+        entity.setInitialAmount(order.getOrigQty());
+        entity.setFinalAmount(order.getExecutedQty());
+        entity.setPrice(order.getPrice().toString());
+        entity.setOperationType(order.getSide());
+        entity.setOrderId(order.getOrderId());
+        entity.setOrderStatus(order.getStatus());
         return entity;
     }
 }

@@ -2,6 +2,7 @@ package medvedev.com.service;
 
 import com.binance.api.client.domain.OrderSide;
 import com.binance.api.client.domain.OrderStatus;
+import com.binance.api.client.domain.account.Order;
 import lombok.RequiredArgsConstructor;
 import medvedev.com.dto.ExchangeHistoryDto;
 import medvedev.com.entity.ExchangeHistoryEntity;
@@ -32,6 +33,15 @@ public class ExchangeHistoryService {
 
     public ExchangeHistoryDto save(ExchangeHistoryEntity entity) {
         return ExchangeHistoryDto.from(exchangeHistoryRepository.save(entity));
+    }
+
+    public boolean saveIfNotExist(Order order) {
+        if (exchangeHistoryRepository.existsByOrderId(order.getOrderId())) {
+            return false;
+        } else {
+            exchangeHistoryRepository.save(ExchangeHistoryEntity.from(order));
+            return true;
+        }
     }
 
     public void closingOpenedExchangeById(List<ExchangeHistoryDto> openedExchange, ExchangeHistoryDto lastExchange) {
@@ -69,6 +79,12 @@ public class ExchangeHistoryService {
 
     public boolean isNotExistExchangeSell() {
         return !exchangeHistoryRepository.existsByOperationTypeAndOrderStatus(OrderSide.SELL, OrderStatus.FILLED);
+    }
+
+    public Optional<ExchangeHistoryDto> getLastExchange() {
+
+        return exchangeHistoryRepository.findTopByOrderStatusOrderByIdDesc(OrderStatus.FILLED)
+                .map(ExchangeHistoryDto::from);
     }
 
     public Optional<ExchangeHistoryDto> getLastFiatCrypt() {
