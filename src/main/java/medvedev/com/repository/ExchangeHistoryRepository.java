@@ -17,8 +17,12 @@ import java.util.Optional;
 @Repository
 public interface ExchangeHistoryRepository extends JpaRepository<ExchangeHistoryEntity, Long> {
 
+    Optional<ExchangeHistoryEntity> findTopByOrderStatusOrderByIdDesc(OrderStatus orderStatus);
+
     Optional<ExchangeHistoryEntity> findFirstByOperationTypeAndOrderStatusOrderByDateTimeDesc(OrderSide orderSide,
                                                                                               OrderStatus orderStatus);
+
+    boolean existsByOrderId(Long idOrder);
 
     boolean existsByOperationTypeAndOrderStatus(OrderSide orderSide, OrderStatus orderStatus);
 

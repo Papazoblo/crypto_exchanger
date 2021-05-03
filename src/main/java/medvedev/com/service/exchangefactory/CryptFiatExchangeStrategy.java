@@ -6,8 +6,10 @@ import medvedev.com.client.BinanceClient;
 import medvedev.com.dto.ExchangeHistoryDto;
 import medvedev.com.dto.PriceChangeDto;
 import medvedev.com.enums.Currency;
+import medvedev.com.enums.SystemConfiguration;
 import medvedev.com.service.CheckPriceDifferenceService;
 import medvedev.com.service.ExchangeHistoryService;
+import medvedev.com.service.SystemConfigurationService;
 import medvedev.com.service.telegram.TelegramPollingService;
 import medvedev.com.wrapper.BigDecimalWrapper;
 
@@ -24,8 +26,9 @@ public class CryptFiatExchangeStrategy extends BaseExchangeStrategy {
     public CryptFiatExchangeStrategy(BinanceClient binanceClient,
                                      ExchangeHistoryService historyService,
                                      TelegramPollingService telegramPollingService,
-                                     CheckPriceDifferenceService differenceService) {
-        super(binanceClient, historyService, telegramPollingService, differenceService);
+                                     CheckPriceDifferenceService differenceService,
+                                     SystemConfigurationService systemConfigurationService) {
+        super(binanceClient, historyService, telegramPollingService, differenceService, systemConfigurationService);
     }
 
     /**
@@ -69,7 +72,8 @@ public class CryptFiatExchangeStrategy extends BaseExchangeStrategy {
         double sumOpenedExchange = histories.stream()
                 .mapToDouble(record -> record.getFinalAmount().doubleValue())
                 .sum();
-        sumOpenedExchange -= sumOpenedExchange * 0.003;
+        double inviolableResidue = systemConfigurationService.findDoubleByName(SystemConfiguration.INVIOLABLE_RESIDUE);
+        sumOpenedExchange -= sumOpenedExchange * inviolableResidue;
         return Double.parseDouble(binanceClient.getBalanceByCurrency(Currency.ETH).getFree()) > sumOpenedExchange
                 ? sumOpenedExchange : 0;
     }

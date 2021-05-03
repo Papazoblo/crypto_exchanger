@@ -11,7 +11,7 @@ public class TimeService {
         return LocalDateTime.now();
     }
 
-    public LocalDateTime withoutMinusMinutes(Integer minutes) {
+    public LocalDateTime nowMinusMinutes(Integer minutes) {
         return now().minusMinutes(minutes);
     }
 }

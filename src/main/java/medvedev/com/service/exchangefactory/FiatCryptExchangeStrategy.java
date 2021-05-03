@@ -4,12 +4,13 @@ import com.binance.api.client.domain.account.AssetBalance;
 import com.binance.api.client.domain.account.NewOrderResponse;
 import lombok.extern.log4j.Log4j2;
 import medvedev.com.client.BinanceClient;
-import medvedev.com.dto.ExchangeHistoryDto;
 import medvedev.com.dto.PriceChangeDto;
 import medvedev.com.enums.Currency;
+import medvedev.com.enums.SystemConfiguration;
 import medvedev.com.service.BalanceCheckerService;
 import medvedev.com.service.CheckPriceDifferenceService;
 import medvedev.com.service.ExchangeHistoryService;
+import medvedev.com.service.SystemConfigurationService;
 import medvedev.com.service.telegram.TelegramPollingService;
 import medvedev.com.wrapper.BigDecimalWrapper;
 import org.springframework.stereotype.Service;
@@ -31,9 +32,9 @@ public class FiatCryptExchangeStrategy extends BaseExchangeStrategy {
                                      BinanceClient binanceClient,
                                      ExchangeHistoryService historyService,
                                      TelegramPollingService telegramPollingService,
-                                     CheckPriceDifferenceService differenceService) {
-        super(binanceClient, historyService, telegramPollingService,
-                differenceService);
+                                     CheckPriceDifferenceService differenceService,
+                                     SystemConfigurationService systemConfigurationService) {
+        super(binanceClient, historyService, telegramPollingService, differenceService, systemConfigurationService);
         this.balanceCheckerService = balanceCheckerService;
         this.historyService = historyService;
     }
@@ -71,9 +72,9 @@ public class FiatCryptExchangeStrategy extends BaseExchangeStrategy {
 
     private void doExchange(BigDecimalWrapper amount, PriceChangeDto priceChange) {
         //берем последний обмен КРИПТА ФИАТ
-        ExchangeHistoryDto lastSellExchange = historyService.findLastSellExchange();
+        double lastSellPrice = systemConfigurationService.findDoubleByName(SystemConfiguration.CURRENT_PRICE_LEVEL);
 
-        if (differenceService.isPriceDecreased(priceChange.getNewPrice(), lastSellExchange.getPrice().doubleValue())) {
+        if (differenceService.isPriceDecreased(priceChange.getNewPrice(), lastSellPrice)) {
             sendExchangeRequest(amount, priceChange);
         }
     }
