@@ -51,6 +51,12 @@ public class TelegramMessageParserService {
             case "/fiatcrypt":
                 handler = new ChangePricePercentDifferenceHandler(systemConfigurationService);
                 break;
+            case "/inviolableresidue":
+                handler = new ChangeInviolableResidueHandler(systemConfigurationService);
+                break;
+            case "/minuteswithoutchange":
+                handler = new ChangeMinutesCountWithoutExchangeHandler(systemConfigurationService);
+                break;
             default:
                 handler = new IncorrectCommandHandler();
         }

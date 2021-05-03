@@ -11,6 +11,8 @@ public class CommandListBuilder {
 
     public static List<BotCommand> getCommandList() {
         return Arrays.asList(
+                createCommand("/inviolableresidue", "Set inviolable residue"),
+                createCommand("/minuteswithoutchange", "Set minutes count without change"),
                 createCommand("/price", "Return current price "),
                 createCommand("/balance", "Return current balance"),
                 createCommand("/fiatcrypt", "Set fiat-crypt percent difference"),
