@@ -8,7 +8,6 @@ import medvedev.com.enums.SystemConfiguration;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
 @Service
@@ -28,18 +27,15 @@ public class CheckLastExchangeService {
 
         exchangeHistoryService.getLastExchange().ifPresentOrElse(exchange -> {
             if (exchange.getDateTime().isBefore(startTimeRange)) {
-                checkLastOrder(startTimeRange);
+                checkLastOrder();
             }
-        }, () -> checkLastOrder(startTimeRange));
+        }, this::checkLastOrder);
     }
 
-    private void checkLastOrder(LocalDateTime startTimeRange) {
+    private void checkLastOrder() {
         try {
             Order order = client.getLastFilledOrder();
-            LocalDateTime orderTime = new Timestamp(order.getTime()).toLocalDateTime();
-            if (orderTime.isAfter(startTimeRange)) {
-                exchangeHistoryService.saveIfNotExist(order);
-            }
+            exchangeHistoryService.saveIfNotExist(order);
         } catch (Exception ex) {
             log.debug("Order list is empty");
         }
