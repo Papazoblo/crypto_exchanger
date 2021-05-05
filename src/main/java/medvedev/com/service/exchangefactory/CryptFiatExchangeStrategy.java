@@ -50,8 +50,11 @@ public class CryptFiatExchangeStrategy extends BaseExchangeStrategy {
                     new BigDecimal(sumToExchange).setScale(PRECISION_SIZE, RoundingMode.DOWN), priceChange);
             ExchangeHistoryDto lastExchange = writeToHistory(response, priceChange);
             historyService.closingOpenedExchangeById(list, lastExchange);
-            telegramPollingService.sendMessage(String.format("Launch exchange ETH => USDT: amount = %s",
-                    sumToExchange));
+            telegramPollingService.sendMessage(String.format(EXCHANGE_MESSAGE_PATTERN, "ETH => USDT",
+                    priceChange.getNewPrice().toString(),
+                    sumToExchange,
+                    new BigDecimalWrapper(sumToExchange).multiply(priceChange.getNewPrice())
+                            .setScale(PRECISION_SIZE, RoundingMode.DOWN)));
         }
     }
 

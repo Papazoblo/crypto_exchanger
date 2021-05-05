@@ -62,7 +62,10 @@ public class FiatCryptExchangeStrategy extends BaseExchangeStrategy {
         log.info("Start buy exchange: " + value.toString() + " ETH");
         NewOrderResponse response = binanceClient.createBuyOrder(value);
         writeToHistory(response, priceChange);
-        telegramPollingService.sendMessage(String.format("Launch exchange USDT => ETH: amount = %s", value.toString()));
+        telegramPollingService.sendMessage(String.format(EXCHANGE_MESSAGE_PATTERN, "USDT => ETH",
+                priceChange.getNewPrice().toString(),
+                value.toString(),
+                value.multiply(priceChange.getNewPrice())));
         return response;
     }
 

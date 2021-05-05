@@ -16,6 +16,9 @@ import java.math.BigDecimal;
 
 public abstract class BaseExchangeStrategy implements ExchangeStrategy {
 
+    protected static final String EXCHANGE_MESSAGE_PATTERN = "*%s*\n_price_: %s\n" +
+            "_from_: %s\n_to_: %s";
+
     protected final BinanceClient binanceClient;
     protected final ExchangeHistoryService historyService;
     protected final TelegramPollingService telegramPollingService;
