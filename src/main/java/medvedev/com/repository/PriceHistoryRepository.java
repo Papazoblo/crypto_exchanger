@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
-public interface PriceHistoryRepository extends JpaRepository<PriceHistoryEntity, Long> {
+public interface PriceHistoryRepository extends JpaRepository<PriceHistoryEntity, LocalDateTime> {
 
     List<PriceHistoryEntity> findAllByDateIsBefore(LocalDateTime dateTime);
 }

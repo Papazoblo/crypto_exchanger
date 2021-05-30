@@ -19,6 +19,7 @@ public class CheckPriceService {
     private final PriceChangeService priceChangeService;
     private final SystemStateService stateService;
     private final ExchangeStrategyFactory exchangeStrategyFactory;
+    private final CheckPredictionPriceService checkPredictionPriceService;
 
     @Scheduled(cron = "${exchange.cron.check-price}")
     public void checkPrice() {
@@ -32,7 +33,7 @@ public class CheckPriceService {
 
         try {
             ExchangeStrategy strategy = exchangeStrategyFactory.getExchangeStrategy(priceChange);
-            strategy.launchExchangeAlgorithm(priceChange);
+            checkPredictionPriceService.checkPrediction(priceChange, strategy);
         } catch (Exception ex) {
             log.info(ex.getMessage());
         }

@@ -8,6 +8,7 @@ import medvedev.com.entity.ExchangeHistoryEntity;
 import medvedev.com.enums.SystemConfiguration;
 import medvedev.com.service.CheckPriceDifferenceService;
 import medvedev.com.service.ExchangeHistoryService;
+import medvedev.com.service.NeuralNetworkService;
 import medvedev.com.service.SystemConfigurationService;
 import medvedev.com.service.telegram.TelegramPollingService;
 import medvedev.com.wrapper.BigDecimalWrapper;
@@ -24,16 +25,19 @@ public abstract class BaseExchangeStrategy implements ExchangeStrategy {
     protected final TelegramPollingService telegramPollingService;
     protected final CheckPriceDifferenceService differenceService;
     protected final SystemConfigurationService systemConfigurationService;
+    protected final NeuralNetworkService neuralNetworkService;
 
     protected BaseExchangeStrategy(BinanceClient binanceClient, ExchangeHistoryService historyService,
                                    TelegramPollingService telegramPollingService,
                                    CheckPriceDifferenceService differenceService,
-                                   SystemConfigurationService systemConfigurationService) {
+                                   SystemConfigurationService systemConfigurationService,
+                                   NeuralNetworkService neuralNetworkService) {
         this.binanceClient = binanceClient;
         this.historyService = historyService;
         this.telegramPollingService = telegramPollingService;
         this.differenceService = differenceService;
         this.systemConfigurationService = systemConfigurationService;
+        this.neuralNetworkService = neuralNetworkService;
     }
 
     protected abstract NewOrderResponse sendExchangeRequest(BigDecimal value, PriceChangeDto priceChange);

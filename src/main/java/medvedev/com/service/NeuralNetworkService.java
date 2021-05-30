@@ -18,7 +18,7 @@ public class NeuralNetworkService {
 
     private static final int inputLayer = 35;
     private static final int hiddenLayer = 60;
-    private static final int outputLayer = 3;
+    private static final int outputLayer = 1;
 
     private final PriceHistoryService priceHistoryService;
 

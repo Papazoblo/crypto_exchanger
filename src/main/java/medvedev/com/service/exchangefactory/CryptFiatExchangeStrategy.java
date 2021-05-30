@@ -9,6 +9,7 @@ import medvedev.com.enums.Currency;
 import medvedev.com.enums.SystemConfiguration;
 import medvedev.com.service.CheckPriceDifferenceService;
 import medvedev.com.service.ExchangeHistoryService;
+import medvedev.com.service.NeuralNetworkService;
 import medvedev.com.service.SystemConfigurationService;
 import medvedev.com.service.telegram.TelegramPollingService;
 import medvedev.com.wrapper.BigDecimalWrapper;
@@ -27,8 +28,10 @@ public class CryptFiatExchangeStrategy extends BaseExchangeStrategy {
                                      ExchangeHistoryService historyService,
                                      TelegramPollingService telegramPollingService,
                                      CheckPriceDifferenceService differenceService,
-                                     SystemConfigurationService systemConfigurationService) {
-        super(binanceClient, historyService, telegramPollingService, differenceService, systemConfigurationService);
+                                     SystemConfigurationService systemConfigurationService,
+                                     NeuralNetworkService neuralNetworkService) {
+        super(binanceClient, historyService, telegramPollingService, differenceService, systemConfigurationService,
+                neuralNetworkService);
     }
 
     /**
