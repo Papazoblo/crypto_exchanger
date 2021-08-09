@@ -43,7 +43,7 @@ public class ChangePricePercentDifferenceHandler extends BaseHandlerHandlerImpl 
                 response = "Value is not a number";
             }
         } else {
-            response = "You entered invalid command";
+            response = configuration.getName() + " value: " + systemConfigurationService.findBdByName(configuration);
         }
         return response;
     }

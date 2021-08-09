@@ -8,6 +8,7 @@ import medvedev.com.entity.PriceChangeEntity;
 import medvedev.com.enums.HavePriceChangeState;
 import medvedev.com.enums.PriceChangeState;
 import medvedev.com.repository.PriceChangeRepository;
+import medvedev.com.service.telegram.TelegramPollingService;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -16,12 +17,15 @@ import org.springframework.stereotype.Service;
 public class PriceChangeService {
 
     private final PriceChangeRepository repository;
+    private final TelegramPollingService telegramService;
 
     public PriceChangeDto refresh(TickerStatistics ticker) {
         PriceChangeEntity priceChangeEntity = repository.findFirstById()
                 .map(price -> updatePriceChangeEntity(ticker, price))
                 .orElse(createPriceChangeEntity(ticker));
         log.info(String.format("%s => %s, %s, %s", priceChangeEntity.getOldPrice(), priceChangeEntity.getNewPrice(),
+                priceChangeEntity.getState(), priceChangeEntity.getHaveChanges()));
+        telegramService.sendMessage(String.format("_%s_ => _%s_\n*%s*\n*%s*", priceChangeEntity.getOldPrice(), priceChangeEntity.getNewPrice(),
                 priceChangeEntity.getState(), priceChangeEntity.getHaveChanges()));
         repository.save(priceChangeEntity);
         return PriceChangeDto.from(priceChangeEntity);

@@ -11,6 +11,7 @@ plugins {
     id 'java'
     id 'maven'
     id 'info.solidsoft.pitest' version '1.5.1'
+    id 'org.springframework.boot' version '2.4.3'
 }
 
 apply plugin: 'info.solidsoft.pitest'
@@ -26,6 +27,12 @@ repositories {
     flatDir {
         dirs 'E:/maven'
     }
+}
+
+bootJar {
+    mainClassName = 'medvedev.com.Application'
+    baseName = 'exchanger'
+    version = '1.0.0'
 }
 
 test {

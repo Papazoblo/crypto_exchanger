@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -63,8 +64,12 @@ public class ExchangeHistoryService {
      * проставленного idPrev (т.е. цикл обмена не завершился)
      */
     public List<ExchangeHistoryDto> getAllOpenExchange() {
-        return toDto(exchangeHistoryRepository.findAllByOperationTypeAndOrderStatusAndIdPrevExchangeIsNull(
-                OrderSide.BUY, OrderStatus.FILLED));
+        List<ExchangeHistoryEntity> openedBuyExchange = exchangeHistoryRepository.findOpenedBuyExchange(
+                OrderSide.BUY, OrderStatus.FILLED);
+        if (!openedBuyExchange.isEmpty()) {
+            return toDto(Collections.singletonList(openedBuyExchange.get(0)));
+        }
+        return Collections.emptyList();
     }
 
     /**
