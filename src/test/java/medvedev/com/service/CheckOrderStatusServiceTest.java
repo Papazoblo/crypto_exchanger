@@ -49,7 +49,7 @@ public class CheckOrderStatusServiceTest {
             when(systemStateService.isSystemNotLaunched())
                     .thenReturn(true);
 
-            service.checkOrderStatus();
+            service.updateOrderStatus();
             verify(exchangeHistoryService, never()).getNewExchange();
             verify(binanceClient, never()).getOrderStatus(any());
             verify(exchangeHistoryService, never()).alterStatusById(any(), any());
@@ -63,7 +63,7 @@ public class CheckOrderStatusServiceTest {
             when(binanceClient.getOrderStatus(historyDto.getOrderId()))
                     .thenReturn(newStatus);
 
-            service.checkOrderStatus();
+            service.updateOrderStatus();
             verify(exchangeHistoryService).alterStatusById(historyDto.getId(), newStatus);
         }
 
@@ -75,7 +75,7 @@ public class CheckOrderStatusServiceTest {
             when(binanceClient.getOrderStatus(historyDto.getOrderId()))
                     .thenReturn(newStatus);
 
-            service.checkOrderStatus();
+            service.updateOrderStatus();
             verify(exchangeHistoryService, never()).alterStatusById(historyDto.getId(), newStatus);
         }
 
@@ -85,7 +85,7 @@ public class CheckOrderStatusServiceTest {
             when(exchangeHistoryService.getNewExchange())
                     .thenThrow(new EntityNotFoundException("New exchange history"));
 
-            service.checkOrderStatus();
+            service.updateOrderStatus();
             verify(binanceClient, never()).getOrderStatus(any());
             verify(exchangeHistoryService, never()).alterStatusById(any(), any());
 
@@ -101,7 +101,7 @@ public class CheckOrderStatusServiceTest {
             doThrow(SQLIntegrityConstraintViolationException.class)
                     .when(exchangeHistoryService).alterStatusById(historyDto.getId(), newStatus);
 
-            service.checkOrderStatus();
+            service.updateOrderStatus();
         }
     }
 

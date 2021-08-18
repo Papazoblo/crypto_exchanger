@@ -5,8 +5,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import medvedev.com.client.BinanceClient;
 import medvedev.com.dto.PriceChangeDto;
-import medvedev.com.service.exchangefactory.ExchangeStrategy;
-import medvedev.com.service.exchangefactory.ExchangeStrategyFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -15,32 +13,24 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class CheckPriceService {
 
+    private static final long RECHECK_PRICE_CHANGE = 5 * 60 * 1000;
+    private static final int CHECK_PRICE_COUNT = 2;
+
     private final BinanceClient client;
     private final PriceChangeService priceChangeService;
-    private final SystemStateService stateService;
-    private final ExchangeStrategyFactory exchangeStrategyFactory;
+    private final ExchangerInitializerService exchangerInitializerService;
 
     @Scheduled(fixedRate = 30 * 60 * 1000)
     public void checkPrice() throws InterruptedException {
 
-        getPriceChange();
-        Thread.sleep(5 * 1000);
-        PriceChangeDto priceChange = getPriceChange();
-
-        if (stateService.isSystemNotLaunched()) {
-            return;
+        PriceChangeDto priceChange = null;
+        for (int i = 0; i < CHECK_PRICE_COUNT; i++) {
+            if (i != 0) {
+                Thread.sleep(RECHECK_PRICE_CHANGE);
+            }
+            TickerStatistics statistics = client.getPriceInfo();
+            priceChange = priceChangeService.refresh(statistics);
         }
-
-        try {
-            ExchangeStrategy strategy = exchangeStrategyFactory.getExchangeStrategy(priceChange);
-            strategy.launchExchangeAlgorithm(priceChange);
-        } catch (Exception ex) {
-            log.info(ex.getMessage());
-        }
-    }
-
-    private PriceChangeDto getPriceChange() {
-        TickerStatistics statistics = client.getPriceInfo();
-        return priceChangeService.refresh(statistics);
+        exchangerInitializerService.initializeExchangeProcess(priceChange);
     }
 }

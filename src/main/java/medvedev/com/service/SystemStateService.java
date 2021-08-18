@@ -18,11 +18,11 @@ public class SystemStateService {
 
     private final SystemConfigurationService systemConfigurationService;
 
-    public boolean isSystemNotLaunched() {
+    public boolean isSystemLaunched() {
         try {
             SystemState state = SystemState.valueOf(
                     systemConfigurationService.findByName(SystemConfiguration.SYSTEM_STATE));
-            return state != LAUNCHED;
+            return state == LAUNCHED;
         } catch (EntityNotFoundException ex) {
             log.debug(ex);
             systemConfigurationService.save(createSystemStateConfiguration());

@@ -10,7 +10,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -38,9 +37,6 @@ public interface ExchangeHistoryRepository extends JpaRepository<ExchangeHistory
             "  AND ex.orderStatus = 'FILLED' " +
             "ORDER BY ex.id DESC")
     List<ExchangeHistoryEntity> findOpenedBuyExchange(OrderSide type, OrderStatus status);
-
-    List<ExchangeHistoryEntity> findAllByDateTimeGreaterThanAndIdPrevExchangeIsNotNullAndOrderStatus(
-            LocalDateTime startDate, OrderStatus status);
 
     @Transactional
     @Modifying

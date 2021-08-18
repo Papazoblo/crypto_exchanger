@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 @Log4j2
 public class PriceChangeService {
 
+    private static final String NOTIFY_PRICE_CHANGE_TEMPLATE = "_%s_ => _%s_\n*%s*\n*%s*";
+
     private final PriceChangeRepository repository;
     private final TelegramPollingService telegramService;
 
@@ -23,12 +25,17 @@ public class PriceChangeService {
         PriceChangeEntity priceChangeEntity = repository.findFirstById()
                 .map(price -> updatePriceChangeEntity(ticker, price))
                 .orElse(createPriceChangeEntity(ticker));
-        log.info(String.format("%s => %s, %s, %s", priceChangeEntity.getOldPrice(), priceChangeEntity.getNewPrice(),
-                priceChangeEntity.getState(), priceChangeEntity.getHaveChanges()));
-        telegramService.sendMessage(String.format("_%s_ => _%s_\n*%s*\n*%s*", priceChangeEntity.getOldPrice(),
-                priceChangeEntity.getNewPrice(), priceChangeEntity.getState(), priceChangeEntity.getHaveChanges()));
+        notifyOfChangePrice(priceChangeEntity);
         repository.save(priceChangeEntity);
         return PriceChangeDto.from(priceChangeEntity);
+    }
+
+    private void notifyOfChangePrice(PriceChangeEntity priceChangeEntity) {
+        log.info(String.format(NOTIFY_PRICE_CHANGE_TEMPLATE.replaceAll("[_*\\\n]", ""),
+                priceChangeEntity.getOldPrice(), priceChangeEntity.getNewPrice(), priceChangeEntity.getState(),
+                priceChangeEntity.getHaveChanges()));
+        telegramService.sendMessage(String.format(NOTIFY_PRICE_CHANGE_TEMPLATE, priceChangeEntity.getOldPrice(),
+                priceChangeEntity.getNewPrice(), priceChangeEntity.getState(), priceChangeEntity.getHaveChanges()));
     }
 
     private static PriceChangeEntity updatePriceChangeEntity(TickerStatistics ticker, PriceChangeEntity entity) {

@@ -82,28 +82,14 @@ public class ExchangeHistoryService {
                 .collect(Collectors.toList());
     }
 
-    public boolean isNotExistExchangeSell() {
-        return !exchangeHistoryRepository.existsByOperationTypeAndOrderStatus(OrderSide.SELL, OrderStatus.FILLED);
+    public boolean isExistExchangeSell() {
+        return exchangeHistoryRepository.existsByOperationTypeAndOrderStatus(OrderSide.SELL, OrderStatus.FILLED);
     }
 
     public Optional<ExchangeHistoryDto> getLastExchange() {
 
         return exchangeHistoryRepository.findTopByOrderStatusOrderByIdDesc(OrderStatus.FILLED)
                 .map(ExchangeHistoryDto::from);
-    }
-
-    public Optional<ExchangeHistoryDto> getLastFiatCrypt() {
-        return exchangeHistoryRepository.findTopByOrderStatusAndOperationTypeOrderByDateTimeDesc(OrderStatus.FILLED,
-                OrderSide.BUY).map(ExchangeHistoryDto::from);
-    }
-
-    public List<ExchangeHistoryDto> getAllExchange() {
-        return toDto(exchangeHistoryRepository.findAll());
-    }
-
-    public ExchangeHistoryDto getExchangeById(Long id) {
-        return ExchangeHistoryDto.from(exchangeHistoryRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("ExchangeHistoryEntity", id)));
     }
 
     public ExchangeHistoryDto findLastSellExchange() {
