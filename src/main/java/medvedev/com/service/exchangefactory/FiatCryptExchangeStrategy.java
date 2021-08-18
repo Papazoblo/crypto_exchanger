@@ -7,7 +7,10 @@ import medvedev.com.client.BinanceClient;
 import medvedev.com.dto.PriceChangeDto;
 import medvedev.com.enums.Currency;
 import medvedev.com.enums.SystemConfiguration;
-import medvedev.com.service.*;
+import medvedev.com.service.BalanceCheckerService;
+import medvedev.com.service.CheckPriceDifferenceService;
+import medvedev.com.service.ExchangeHistoryService;
+import medvedev.com.service.SystemConfigurationService;
 import medvedev.com.service.telegram.TelegramPollingService;
 import medvedev.com.wrapper.BigDecimalWrapper;
 import org.springframework.stereotype.Service;
@@ -30,10 +33,8 @@ public class FiatCryptExchangeStrategy extends BaseExchangeStrategy {
                                      ExchangeHistoryService historyService,
                                      TelegramPollingService telegramPollingService,
                                      CheckPriceDifferenceService differenceService,
-                                     SystemConfigurationService systemConfigurationService,
-                                     NeuralNetworkService neuralNetworkService) {
-        super(binanceClient, historyService, telegramPollingService, differenceService, systemConfigurationService,
-                neuralNetworkService);
+                                     SystemConfigurationService systemConfigurationService) {
+        super(binanceClient, historyService, telegramPollingService, differenceService, systemConfigurationService);
         this.balanceCheckerService = balanceCheckerService;
         this.historyService = historyService;
     }

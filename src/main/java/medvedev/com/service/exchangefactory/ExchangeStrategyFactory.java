@@ -6,7 +6,10 @@ import medvedev.com.dto.PriceChangeDto;
 import medvedev.com.enums.HavePriceChangeState;
 import medvedev.com.enums.PriceChangeState;
 import medvedev.com.exception.NoSuitableStrategyException;
-import medvedev.com.service.*;
+import medvedev.com.service.BalanceCheckerService;
+import medvedev.com.service.CheckPriceDifferenceService;
+import medvedev.com.service.ExchangeHistoryService;
+import medvedev.com.service.SystemConfigurationService;
 import medvedev.com.service.telegram.TelegramPollingService;
 import org.springframework.stereotype.Component;
 
@@ -20,18 +23,16 @@ public class ExchangeStrategyFactory {
     private final TelegramPollingService telegramPollingService;
     private final BinanceClient client;
     private final SystemConfigurationService systemConfigurationService;
-    private final NeuralNetworkService neuralNetworkService;
 
     public ExchangeStrategy getExchangeStrategy(PriceChangeDto priceChange) {
 
         if (priceChange.getHavePriceChangeState() == HavePriceChangeState.WITH_CHANGES) {
             if (priceChange.getState() == PriceChangeState.INCREASED) {
                 return new FiatCryptExchangeStrategy(balanceCheckerService, client, historyService,
-                        telegramPollingService, checkPriceDifferenceService, systemConfigurationService,
-                        neuralNetworkService);
+                        telegramPollingService, checkPriceDifferenceService, systemConfigurationService);
             } else {
                 return new CryptFiatExchangeStrategy(client, historyService, telegramPollingService,
-                        checkPriceDifferenceService, systemConfigurationService, neuralNetworkService);
+                        checkPriceDifferenceService, systemConfigurationService);
             }
         } else {
             throw new NoSuitableStrategyException();
