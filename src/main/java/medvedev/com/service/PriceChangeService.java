@@ -25,8 +25,8 @@ public class PriceChangeService {
                 .orElse(createPriceChangeEntity(ticker));
         log.info(String.format("%s => %s, %s, %s", priceChangeEntity.getOldPrice(), priceChangeEntity.getNewPrice(),
                 priceChangeEntity.getState(), priceChangeEntity.getHaveChanges()));
-        telegramService.sendMessage(String.format("_%s_ => _%s_\n*%s*\n*%s*", priceChangeEntity.getOldPrice(), priceChangeEntity.getNewPrice(),
-                priceChangeEntity.getState(), priceChangeEntity.getHaveChanges()));
+        telegramService.sendMessage(String.format("_%s_ => _%s_\n*%s*\n*%s*", priceChangeEntity.getOldPrice(),
+                priceChangeEntity.getNewPrice(), priceChangeEntity.getState(), priceChangeEntity.getHaveChanges()));
         repository.save(priceChangeEntity);
         return PriceChangeDto.from(priceChangeEntity);
     }

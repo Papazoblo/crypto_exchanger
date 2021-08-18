@@ -21,11 +21,12 @@ public class CheckPriceService {
     private final ExchangeStrategyFactory exchangeStrategyFactory;
     private final CheckPredictionPriceService checkPredictionPriceService;
 
-    @Scheduled(fixedRate = 60 * 60 * 1000)
-    public void checkPrice() {
+    @Scheduled(fixedRate = 30 * 60 * 1000)
+    public void checkPrice() throws InterruptedException {
 
-        TickerStatistics statistics = client.getPriceInfo();
-        PriceChangeDto priceChange = priceChangeService.refresh(statistics);
+        getPriceChange();
+        Thread.sleep(5 * 1000);
+        PriceChangeDto priceChange = getPriceChange();
 
         if (stateService.isSystemNotLaunched()) {
             return;
@@ -38,5 +39,10 @@ public class CheckPriceService {
         } catch (Exception ex) {
             log.info(ex.getMessage());
         }
+    }
+
+    private PriceChangeDto getPriceChange() {
+        TickerStatistics statistics = client.getPriceInfo();
+        return priceChangeService.refresh(statistics);
     }
 }
