@@ -2,6 +2,7 @@ package medvedev.com.service.telegram.handler;
 
 import lombok.RequiredArgsConstructor;
 import medvedev.com.client.BinanceClient;
+import medvedev.com.service.CheckPriceDifferenceService;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.Message;
 
@@ -12,10 +13,15 @@ import java.util.function.BiConsumer;
 public class CurrentPriceHandler implements BaseHandler {
 
     private final BinanceClient binanceClient;
+    private final CheckPriceDifferenceService priceDifferenceService;
 
     @Override
     public void run(Message message, BiConsumer<String, Long> messageSender) {
         String lastPrice = binanceClient.getPriceInfo().getLastPrice();
-        messageSender.accept("*Last price*: " + lastPrice, message.getChatId());
+        StringBuilder sb = new StringBuilder("*Last price*: ");
+        sb.append(lastPrice);
+        sb.append("\n*Price to exchange*: ");
+        sb.append(priceDifferenceService.getPriceToExchange());
+        messageSender.accept(sb.toString(), message.getChatId());
     }
 }
