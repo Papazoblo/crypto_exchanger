@@ -1,6 +1,7 @@
 package medvedev.com.service.telegram;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import medvedev.com.dto.property.TelegramProperty;
 import medvedev.com.service.security.ChatStateService;
 import medvedev.com.service.telegram.handler.BaseHandler;
@@ -17,13 +18,11 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.Logger;
 
 @RequiredArgsConstructor
 @Service
+@Log4j2
 public class TelegramPollingService extends TelegramLongPollingBot {
-
-    private static final Logger log = Logger.getLogger(String.valueOf(TelegramPollingService.class));
 
     private final TelegramProperty properties;
     private final TelegramMessageParserService parserService;
@@ -80,6 +79,7 @@ public class TelegramPollingService extends TelegramLongPollingBot {
             execute(method);
         } catch (TelegramApiException e) {
             e.printStackTrace();
+            log.debug(e);
         }
     }
 }

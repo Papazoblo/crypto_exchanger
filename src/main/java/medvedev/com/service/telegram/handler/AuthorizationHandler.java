@@ -9,7 +9,7 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import java.util.function.BiConsumer;
 
 @Service
-public class AuthorizationHandler extends BaseHandlerHandlerImpl {
+public class AuthorizationHandler implements BaseHandler {
 
     private static final int USER_LOGIN = 1;
     private static final int USER_PASSWORD = 2;

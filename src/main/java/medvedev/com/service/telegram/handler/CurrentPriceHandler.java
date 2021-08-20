@@ -9,7 +9,7 @@ import java.util.function.BiConsumer;
 
 @Service
 @RequiredArgsConstructor
-public class CurrentPriceHandler extends BaseHandlerHandlerImpl {
+public class CurrentPriceHandler implements BaseHandler {
 
     private final BinanceClient binanceClient;
 

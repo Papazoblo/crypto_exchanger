@@ -1,15 +1,16 @@
 package medvedev.com.service.telegram;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import org.telegram.telegrambots.meta.generics.BotSession;
 
 import javax.annotation.PostConstruct;
 
 @Component
 @RequiredArgsConstructor
+@Log4j2
 public class TelegramConnector {
 
     private final TelegramPollingService pollingService;
@@ -18,9 +19,9 @@ public class TelegramConnector {
     public void connect() {
         try {
             TelegramBotsApi telegramBotsApi = new TelegramBotsApi(TelegramBotSession.class);
-            BotSession session = telegramBotsApi.registerBot(pollingService);
+            telegramBotsApi.registerBot(pollingService);
         } catch (TelegramApiException ex) {
-            //TODO добавить лог
+            log.debug(ex);
         }
     }
 }

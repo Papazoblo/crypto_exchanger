@@ -8,7 +8,7 @@ import java.util.function.BiConsumer;
 
 @Service
 @NoArgsConstructor
-public class NotAuthenticatedCommandHandler extends BaseHandlerHandlerImpl {
+public class NotAuthenticatedCommandHandler implements BaseHandler {
 
     @Override
     public void run(Message message, BiConsumer<String, Long> messageSender) {

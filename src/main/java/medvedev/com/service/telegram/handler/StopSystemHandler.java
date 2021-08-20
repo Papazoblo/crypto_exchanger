@@ -1,5 +1,6 @@
 package medvedev.com.service.telegram.handler;
 
+import lombok.extern.log4j.Log4j2;
 import medvedev.com.enums.SystemConfiguration;
 import medvedev.com.exception.EntityNotFoundException;
 import medvedev.com.service.SystemConfigurationService;
@@ -11,7 +12,8 @@ import java.util.function.BiConsumer;
 import static medvedev.com.enums.SystemState.STOPPED;
 
 @Service
-public class StopSystemHandler extends BaseHandlerHandlerImpl {
+@Log4j2
+public class StopSystemHandler implements BaseHandler {
 
     private final SystemConfigurationService systemConfigurationService;
 
@@ -26,7 +28,7 @@ public class StopSystemHandler extends BaseHandlerHandlerImpl {
             systemConfigurationService.setConfigurationByName(SystemConfiguration.SYSTEM_STATE, STOPPED.name());
             messageSender.accept("System successfully stopped", message.getChatId());
         } catch (EntityNotFoundException ex) {
-            //TODO log
+            log.debug(ex);
             messageSender.accept("Error system stopping", message.getChatId());
         }
     }
