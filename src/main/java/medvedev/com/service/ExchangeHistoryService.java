@@ -25,8 +25,6 @@ import static com.binance.api.client.domain.OrderStatus.PARTIALLY_FILLED;
 public class ExchangeHistoryService {
 
     private final ExchangeHistoryRepository exchangeHistoryRepository;
-    private final SystemConfigurationService systemConfigurationService;
-    private final TimeService timeService;
 
     public void alterStatusById(Long id, OrderStatus status) {
         exchangeHistoryRepository.alterStatusById(status, id);

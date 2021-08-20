@@ -31,9 +31,6 @@ public class PriceChangeService {
     }
 
     private void notifyOfChangePrice(PriceChangeEntity priceChangeEntity) {
-        log.info(String.format(NOTIFY_PRICE_CHANGE_TEMPLATE.replaceAll("[_*\\\n]", ""),
-                priceChangeEntity.getOldPrice(), priceChangeEntity.getNewPrice(), priceChangeEntity.getState(),
-                priceChangeEntity.getHaveChanges()));
         telegramService.sendMessage(String.format(NOTIFY_PRICE_CHANGE_TEMPLATE, priceChangeEntity.getOldPrice(),
                 priceChangeEntity.getNewPrice(), priceChangeEntity.getState(), priceChangeEntity.getHaveChanges()));
     }

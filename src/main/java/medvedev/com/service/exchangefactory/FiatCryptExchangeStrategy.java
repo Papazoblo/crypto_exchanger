@@ -54,7 +54,6 @@ public class FiatCryptExchangeStrategy extends BaseExchangeStrategy {
 
     @Override
     protected NewOrderResponse sendExchangeRequest(BigDecimal value, PriceChangeDto priceChange) {
-        log.info("Start buy exchange: " + value.toString() + " ETH");
         NewOrderResponse response = binanceClient.createBuyOrder(value);
         writeToHistory(response, priceChange);
         telegramPollingService.sendMessage(String.format(EXCHANGE_MESSAGE_PATTERN, "USDT => ETH",

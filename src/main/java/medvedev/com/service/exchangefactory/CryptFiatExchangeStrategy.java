@@ -51,7 +51,6 @@ public class CryptFiatExchangeStrategy extends BaseExchangeStrategy {
 
     @Override
     protected NewOrderResponse sendExchangeRequest(BigDecimal value, PriceChangeDto priceChange) {
-        log.info("Start sell exchange: " + value.toString() + " ETH");
         return binanceClient.createSellOrder(value);
     }
 

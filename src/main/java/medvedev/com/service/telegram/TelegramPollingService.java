@@ -19,6 +19,8 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import java.util.Collections;
 import java.util.List;
 
+import static medvedev.com.utils.StringUtils.transformTgMessage;
+
 @RequiredArgsConstructor
 @Service
 @Log4j2
@@ -66,6 +68,7 @@ public class TelegramPollingService extends TelegramLongPollingBot {
                 .text(message)
                 .build();
         executeCommand(method);
+        log.info(transformTgMessage(message));
     }
 
     private void setCommandList() {
