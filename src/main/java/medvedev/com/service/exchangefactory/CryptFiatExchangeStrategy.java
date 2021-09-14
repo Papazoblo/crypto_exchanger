@@ -9,7 +9,6 @@ import medvedev.com.enums.Currency;
 import medvedev.com.enums.SystemConfiguration;
 import medvedev.com.service.CheckPriceDifferenceService;
 import medvedev.com.service.ExchangeHistoryService;
-import medvedev.com.service.NeuralNetworkService;
 import medvedev.com.service.SystemConfigurationService;
 import medvedev.com.service.telegram.TelegramPollingService;
 import medvedev.com.wrapper.BigDecimalWrapper;
@@ -28,27 +27,16 @@ public class CryptFiatExchangeStrategy extends BaseExchangeStrategy {
                                      ExchangeHistoryService historyService,
                                      TelegramPollingService telegramPollingService,
                                      CheckPriceDifferenceService differenceService,
-                                     SystemConfigurationService systemConfigurationService,
-                                     NeuralNetworkService neuralNetworkService) {
-        super(binanceClient, historyService, telegramPollingService, differenceService, systemConfigurationService,
-                neuralNetworkService);
+                                     SystemConfigurationService systemConfigurationService) {
+        super(binanceClient, historyService, telegramPollingService, differenceService, systemConfigurationService);
     }
-
-    /**
-     * 1. Достаем из базы список открытых обменов
-     * 2. Сравниваем курс (что бы был больше и прибыль была минимум N% от затраченной суммы)
-     * 3. Делаем обмен
-     */
-
 
     @Override
     public void launchExchangeAlgorithm(PriceChangeDto priceChange) {
-        //получили список открытых обменов у которых курс обмена МЕНЬШЕ ТЕКУЩЕГО
         List<ExchangeHistoryDto> openedExchanges = historyService.getOpenProfitableExchange(priceChange.getNewPrice());
-        //Выбираем записи у которых текущий курс БОЛЬШЕ курса обмена на N %
         List<ExchangeHistoryDto> list = getExchangesWithDifferencePrice(openedExchanges, priceChange.getNewPrice());
         double sumToExchange = getSumToExchange(list);
-        if (!list.isEmpty() && sumToExchange > 0) {
+        if (sumToExchange > 0) {
             NewOrderResponse response = sendExchangeRequest(
                     new BigDecimal(sumToExchange).setScale(PRECISION_SIZE, RoundingMode.DOWN), priceChange);
             ExchangeHistoryDto lastExchange = writeToHistory(response, priceChange);
@@ -63,7 +51,6 @@ public class CryptFiatExchangeStrategy extends BaseExchangeStrategy {
 
     @Override
     protected NewOrderResponse sendExchangeRequest(BigDecimal value, PriceChangeDto priceChange) {
-        log.info("Start sell exchange: " + value.toString() + " ETH");
         return binanceClient.createSellOrder(value);
     }
 

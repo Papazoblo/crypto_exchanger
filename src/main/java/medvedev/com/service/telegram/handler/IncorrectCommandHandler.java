@@ -8,7 +8,7 @@ import java.util.function.BiConsumer;
 
 @Service
 @RequiredArgsConstructor
-public class IncorrectCommandHandler extends BaseHandlerHandlerImpl {
+public class IncorrectCommandHandler implements BaseHandler {
 
     @Override
     public void run(Message message, BiConsumer<String, Long> messageSender) {

@@ -1,5 +1,6 @@
 package medvedev.com.service.telegram.handler;
 
+import lombok.extern.log4j.Log4j2;
 import medvedev.com.enums.SystemConfiguration;
 import medvedev.com.exception.EntityNotFoundException;
 import medvedev.com.service.SystemConfigurationService;
@@ -11,7 +12,8 @@ import java.util.function.BiConsumer;
 import static medvedev.com.enums.SystemState.LAUNCHED;
 
 @Service
-public class LaunchSystemHandler extends BaseHandlerHandlerImpl {
+@Log4j2
+public class LaunchSystemHandler implements BaseHandler {
 
     private final SystemConfigurationService systemConfigurationService;
 
@@ -25,7 +27,7 @@ public class LaunchSystemHandler extends BaseHandlerHandlerImpl {
             systemConfigurationService.setConfigurationByName(SystemConfiguration.SYSTEM_STATE, LAUNCHED.name());
             messageSender.accept("System successfully launched", message.getChatId());
         } catch (EntityNotFoundException ex) {
-            //TODO log
+            log.debug(ex);
             messageSender.accept("Error system launching", message.getChatId());
         }
     }

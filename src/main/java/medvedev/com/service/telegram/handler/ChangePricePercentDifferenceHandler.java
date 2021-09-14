@@ -11,9 +11,7 @@ import static medvedev.com.enums.SystemConfiguration.MIN_DIFFERENCE_PRICE;
 import static medvedev.com.enums.SystemConfiguration.MIN_DIFFERENCE_PRICE_FIAT_CRYPT;
 
 @Service
-public class ChangePricePercentDifferenceHandler extends BaseHandlerHandlerImpl {
-
-    private static final int CONFIGURATION_VALUE = 1;
+public class ChangePricePercentDifferenceHandler implements BaseHandler {
 
     private final SystemConfigurationService systemConfigurationService;
 
@@ -23,28 +21,35 @@ public class ChangePricePercentDifferenceHandler extends BaseHandlerHandlerImpl 
 
     @Override
     public void run(Message message, BiConsumer<String, Long> messageSender) {
-
         String messageText = message.getText();
-        SystemConfiguration configuration = messageText.contains("cryptfiat") ? MIN_DIFFERENCE_PRICE
-                : MIN_DIFFERENCE_PRICE_FIAT_CRYPT;
-        messageSender.accept(saveValue(messageText, configuration), message.getChatId());
+        messageSender.accept(processCommand(messageText), message.getChatId());
     }
 
-    private String saveValue(String message, SystemConfiguration configuration) {
-        String[] splitMessage = message.split(" ");
+    private String processCommand(String command) {
+        String[] splitMessage = command.split(" ");
         String response;
-
-        if (splitMessage.length == 2) {
-            try {
-                Double.valueOf(splitMessage[CONFIGURATION_VALUE]);
-                systemConfigurationService.setConfigurationByName(configuration, splitMessage[CONFIGURATION_VALUE]);
-                response = "Value success changed";
-            } catch (NumberFormatException ex) {
-                response = "Value is not a number";
-            }
-        } else {
-            response = configuration.getName() + " value: " + systemConfigurationService.findBdByName(configuration);
+        SystemConfiguration configuration = command.contains("cryptfiat") ? MIN_DIFFERENCE_PRICE
+                : MIN_DIFFERENCE_PRICE_FIAT_CRYPT;
+        switch (splitMessage.length) {
+            case UPDATE_COMMAND_LENGTH:
+                response = saveValue(splitMessage[CONFIGURATION_VALUE], configuration);
+                break;
+            case GET_COMMAND_LENGTH:
+                response = systemConfigurationService.findByName(configuration);
+                break;
+            default:
+                response = "You entered invalid command";
         }
         return response;
+    }
+
+    private String saveValue(String value, SystemConfiguration configuration) {
+        try {
+            Double.valueOf(value);
+            systemConfigurationService.setConfigurationByName(configuration, value);
+            return "Value success changed";
+        } catch (NumberFormatException ex) {
+            return "Value is not a number";
+        }
     }
 }

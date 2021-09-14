@@ -45,17 +45,15 @@ public class BinanceClient {
 
     public Order getLastFilledOrder() throws NotFoundException {
         List<Order> orders = getAllOrders();
-        if (orders.isEmpty()) {
-            throw new NotFoundException("Orders not found");
-        } else {
+        if (!orders.isEmpty()) {
             for (int i = orders.size() - 1; i >= 0; i--) {
                 Order order = orders.get(i);
                 if (order.getStatus() == OrderStatus.FILLED) {
                     return order;
                 }
             }
-            throw new NotFoundException("Orders not found");
         }
+        throw new NotFoundException("Orders not found");
     }
 
     public List<Order> getAllOrders() {

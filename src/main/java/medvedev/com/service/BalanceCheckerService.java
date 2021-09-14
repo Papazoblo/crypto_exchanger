@@ -13,18 +13,22 @@ import java.math.RoundingMode;
 @RequiredArgsConstructor
 public class BalanceCheckerService {
 
-    private final int ROUND_ACCURACY = 0;
+    private static final int ROUND_ACCURACY = 0;
 
     private final SystemConfigurationService systemConfigurationService;
 
-    public BigDecimalWrapper isEnoughFundsBalance(String balance) {
-        return isEnoughFundsBalance(new BigDecimalWrapper(balance));
-    }
+    public BigDecimalWrapper getAmountToExchange(String stringBalance) {
 
-    public BigDecimalWrapper isEnoughFundsBalance(BigDecimalWrapper balance) {
+        BigDecimalWrapper balance = new BigDecimalWrapper(stringBalance);
         BigDecimalWrapper minAmount = systemConfigurationService.findBdByName(SystemConfiguration.MIN_AMOUNT_EXCHANGE);
         BigDecimalWrapper maxAmount = systemConfigurationService.findBdByName(SystemConfiguration.MAX_AMOUNT_EXCHANGE);
         validatedMinMaxAmount(minAmount, maxAmount);
+
+        return isEnoughFundsBalance(balance, minAmount, maxAmount);
+    }
+
+    public BigDecimalWrapper isEnoughFundsBalance(BigDecimalWrapper balance, BigDecimalWrapper minAmount,
+                                                  BigDecimalWrapper maxAmount) {
 
         if (balance.isLessThen(minAmount)) { // если баланс < минимума
             throw new NotEnoughFundsBalanceException(balance);
@@ -37,7 +41,6 @@ public class BalanceCheckerService {
 
     private void validatedMinMaxAmount(BigDecimalWrapper minAmount, BigDecimalWrapper maxAmount) {
         if (minAmount.isGreaterThenOrEqual(maxAmount)) {
-            //TODO логи
             throw new MinMaxAmountIsNotValidException(minAmount, maxAmount);
         }
     }

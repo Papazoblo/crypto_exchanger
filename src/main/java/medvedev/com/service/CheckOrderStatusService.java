@@ -19,22 +19,19 @@ public class CheckOrderStatusService {
     private final BinanceClient client;
 
     @Scheduled(cron = "${exchange.cron.check-status-order}")
-    public void checkOrderStatus() {
-
-        if (stateService.isSystemNotLaunched()) {
-            return;
-        }
-
-        try {
-            ExchangeHistoryDto record = historyService.getNewExchange();
-            OrderStatus status = client.getOrderStatus(record.getOrderId());
-            if (status != record.getOrderStatus()) {
-                historyService.alterStatusById(record.getId(), status);
+    public void updateOrderStatus() {
+        if (stateService.isSystemLaunched()) {
+            try {
+                ExchangeHistoryDto record = historyService.getNewExchange();
+                OrderStatus status = client.getOrderStatus(record.getOrderId());
+                if (status != record.getOrderStatus()) {
+                    historyService.alterStatusById(record.getId(), status);
+                }
+            } catch (EntityNotFoundException ex) {
+                log.debug(ex);
+            } catch (Exception ex) {
+                log.error(ex);
             }
-        } catch (EntityNotFoundException ex) {
-            log.debug(ex);
-        } catch (Exception ex) {
-            log.error(ex);
         }
     }
 }

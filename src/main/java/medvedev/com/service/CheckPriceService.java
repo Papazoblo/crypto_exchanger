@@ -5,8 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import medvedev.com.client.BinanceClient;
 import medvedev.com.dto.PriceChangeDto;
-import medvedev.com.service.exchangefactory.ExchangeStrategy;
-import medvedev.com.service.exchangefactory.ExchangeStrategyFactory;
+import medvedev.com.enums.CheckPriceType;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -15,28 +14,50 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class CheckPriceService {
 
+    private static final long RECHECK_PRICE_CHANGE = 10 * 60 * 1000;
+    private static final long RECHECK_PRICE_CHANGE_QUICK = 15 * 1000;
+
     private final BinanceClient client;
     private final PriceChangeService priceChangeService;
-    private final SystemStateService stateService;
-    private final ExchangeStrategyFactory exchangeStrategyFactory;
-    private final CheckPredictionPriceService checkPredictionPriceService;
+    private final ExchangerInitializerService exchangerInitializerService;
 
-    @Scheduled(fixedRate = 60 * 60 * 1000)
-    public void checkPrice() {
+    @Scheduled(fixedRate = 25 * 60 * 1000)
+    public void checkPriceNormal() {
+        new Thread(() -> {
+            try {
+                checkPrice(CheckPriceType.NORMAL);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
 
+    @Scheduled(fixedRate = 30 * 1000)
+    public void quicklyCheckPrice() {
+        new Thread(() -> {
+            try {
+                checkPrice(CheckPriceType.QUICK);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
+    private void checkPrice(CheckPriceType checkPriceType) throws InterruptedException {
+        PriceChangeDto priceChangeOne;
+        PriceChangeDto priceChangeTwo;
+        priceChangeOne = getPriceChange(checkPriceType);
+        if (checkPriceType == CheckPriceType.QUICK) {
+            Thread.sleep(RECHECK_PRICE_CHANGE_QUICK);
+        } else {
+            Thread.sleep(RECHECK_PRICE_CHANGE);
+        }
+        priceChangeTwo = getPriceChange(checkPriceType);
+        exchangerInitializerService.initializeExchangeProcess(priceChangeOne, priceChangeTwo, checkPriceType);
+    }
+
+    private PriceChangeDto getPriceChange(CheckPriceType checkPriceType) {
         TickerStatistics statistics = client.getPriceInfo();
-        PriceChangeDto priceChange = priceChangeService.refresh(statistics);
-
-        if (stateService.isSystemNotLaunched()) {
-            return;
-        }
-
-        try {
-            ExchangeStrategy strategy = exchangeStrategyFactory.getExchangeStrategy(priceChange);
-            strategy.launchExchangeAlgorithm(priceChange);
-            //checkPredictionPriceService.checkPrediction(priceChange, strategy);
-        } catch (Exception ex) {
-            log.info(ex.getMessage());
-        }
+        return priceChangeService.refresh(statistics, checkPriceType);
     }
 }

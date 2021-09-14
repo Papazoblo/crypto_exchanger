@@ -25,7 +25,6 @@ public class UserService {
             byte[] hash = digest.digest(password.getBytes(StandardCharsets.UTF_8));
             return Hex.encodeHexString(hash);
         } catch (NoSuchAlgorithmException ex) {
-            //TODO логи
             return "";
         }
     }

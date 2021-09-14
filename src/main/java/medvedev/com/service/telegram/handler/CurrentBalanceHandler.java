@@ -14,7 +14,7 @@ import java.util.function.BiConsumer;
 
 @Service
 @RequiredArgsConstructor
-public class CurrentBalanceHandler extends BaseHandlerHandlerImpl {
+public class CurrentBalanceHandler implements BaseHandler {
 
     private final BinanceClient binanceClient;
 

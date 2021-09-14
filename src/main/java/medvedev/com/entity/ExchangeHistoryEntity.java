@@ -8,6 +8,7 @@ import lombok.Data;
 import medvedev.com.dto.PriceChangeDto;
 
 import javax.persistence.*;
+import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
@@ -63,7 +64,7 @@ public class ExchangeHistoryEntity {
         entity.setDateTime(new Timestamp(order.getTime()).toLocalDateTime());
         entity.setInitialAmount(order.getOrigQty());
         entity.setFinalAmount(order.getExecutedQty());
-        entity.setPrice(order.getPrice().toString());
+        entity.setPrice((new BigDecimal(order.getPrice()).multiply(new BigDecimal("0.99"))).toString());
         entity.setOperationType(order.getSide());
         entity.setOrderId(order.getOrderId());
         entity.setOrderStatus(order.getStatus());
