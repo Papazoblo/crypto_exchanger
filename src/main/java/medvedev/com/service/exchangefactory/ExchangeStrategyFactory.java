@@ -3,13 +3,11 @@ package medvedev.com.service.exchangefactory;
 import lombok.RequiredArgsConstructor;
 import medvedev.com.client.BinanceClient;
 import medvedev.com.dto.PriceChangeDto;
+import medvedev.com.enums.CheckPriceType;
 import medvedev.com.enums.HavePriceChangeState;
 import medvedev.com.enums.PriceChangeState;
 import medvedev.com.exception.NoSuitableStrategyException;
-import medvedev.com.service.BalanceCheckerService;
-import medvedev.com.service.CheckPriceDifferenceService;
-import medvedev.com.service.ExchangeHistoryService;
-import medvedev.com.service.SystemConfigurationService;
+import medvedev.com.service.*;
 import medvedev.com.service.telegram.TelegramPollingService;
 import org.springframework.stereotype.Component;
 
@@ -23,19 +21,36 @@ public class ExchangeStrategyFactory {
     private final TelegramPollingService telegramPollingService;
     private final BinanceClient client;
     private final SystemConfigurationService systemConfigurationService;
+    private final TimeService timeService;
 
-    public ExchangeStrategy getExchangeStrategy(PriceChangeDto priceChange) {
+    public ExchangeStrategy getExchangeStrategy(PriceChangeDto priceChangeOne, PriceChangeDto priceChangeTwo,
+                                                CheckPriceType checkPriceType) {
 
-        if (priceChange.getHavePriceChangeState() == HavePriceChangeState.WITH_CHANGES) {
-            if (priceChange.getState() == PriceChangeState.INCREASED) {
+        if ((priceChangeOne.getHavePriceChangeState() == HavePriceChangeState.WITH_CHANGES &&
+                priceChangeTwo.getHavePriceChangeState() == HavePriceChangeState.WITHOUT_CHANGES) ||
+                (priceChangeOne.getHavePriceChangeState() == HavePriceChangeState.WITHOUT_CHANGES &&
+                        priceChangeTwo.getHavePriceChangeState() == HavePriceChangeState.WITHOUT_CHANGES) ||
+                priceChangeTwo.getHavePriceChangeState() == HavePriceChangeState.WITH_CHANGES) {
+            if (priceChangeTwo.getState() == PriceChangeState.INCREASED && checkPriceType == CheckPriceType.NORMAL) {
                 return new FiatCryptExchangeStrategy(balanceCheckerService, client, historyService,
                         telegramPollingService, checkPriceDifferenceService, systemConfigurationService);
             } else {
-                return new CryptFiatExchangeStrategy(client, historyService, telegramPollingService,
-                        checkPriceDifferenceService, systemConfigurationService);
+                if (isCheckTypeValid(checkPriceType, priceChangeTwo)) {
+                    return new CryptFiatExchangeStrategy(client, historyService, telegramPollingService,
+                            checkPriceDifferenceService, systemConfigurationService);
+                }
             }
-        } else {
-            throw new NoSuitableStrategyException();
         }
+        throw new NoSuitableStrategyException();
+    }
+
+    private boolean isCheckTypeValid(CheckPriceType checkPriceType, PriceChangeDto priceChangeDto) {
+        if (checkPriceType == CheckPriceType.NORMAL) {
+            return true;
+        }
+        return historyService.getOpenProfitableExchange(priceChangeDto.getNewPrice()).stream()
+                .anyMatch(exchange -> exchange.getDateTime().plusHours(12).isBefore(timeService.now()));
+
+
     }
 }

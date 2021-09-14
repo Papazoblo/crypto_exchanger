@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import medvedev.com.dto.PriceChangeDto;
 import medvedev.com.entity.PriceChangeEntity;
+import medvedev.com.enums.CheckPriceType;
 import medvedev.com.enums.HavePriceChangeState;
 import medvedev.com.enums.PriceChangeState;
 import medvedev.com.repository.PriceChangeRepository;
@@ -21,18 +22,20 @@ public class PriceChangeService {
     private final PriceChangeRepository repository;
     private final TelegramPollingService telegramService;
 
-    public PriceChangeDto refresh(TickerStatistics ticker) {
+    public PriceChangeDto refresh(TickerStatistics ticker, CheckPriceType checkPriceType) {
         PriceChangeEntity priceChangeEntity = repository.findFirstById()
                 .map(price -> updatePriceChangeEntity(ticker, price))
                 .orElse(createPriceChangeEntity(ticker));
-        notifyOfChangePrice(priceChangeEntity);
+        notifyOfChangePrice(priceChangeEntity, checkPriceType);
         repository.save(priceChangeEntity);
         return PriceChangeDto.from(priceChangeEntity);
     }
 
-    private void notifyOfChangePrice(PriceChangeEntity priceChangeEntity) {
-        telegramService.sendMessage(String.format(NOTIFY_PRICE_CHANGE_TEMPLATE, priceChangeEntity.getOldPrice(),
-                priceChangeEntity.getNewPrice(), priceChangeEntity.getState(), priceChangeEntity.getHaveChanges()));
+    private void notifyOfChangePrice(PriceChangeEntity priceChangeEntity, CheckPriceType checkPriceType) {
+        if (checkPriceType == CheckPriceType.NORMAL) {
+            telegramService.sendMessage(String.format(NOTIFY_PRICE_CHANGE_TEMPLATE, priceChangeEntity.getOldPrice(),
+                    priceChangeEntity.getNewPrice(), priceChangeEntity.getState(), priceChangeEntity.getHaveChanges()));
+        }
     }
 
     private static PriceChangeEntity updatePriceChangeEntity(TickerStatistics ticker, PriceChangeEntity entity) {
