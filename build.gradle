@@ -22,10 +22,10 @@ version '1.0-SNAPSHOT'
 repositories {
     mavenCentral()
     maven {
-        url 'E:/maven'
+        url 'C:/Its my/maven'
     }
     flatDir {
-        dirs 'E:/maven'
+        dirs 'C:/Its my/maven'
     }
 }
 
@@ -44,8 +44,6 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-webflux:2.4.3'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa:2.4.3'
 
-    implementation name: 'neuroph-core-2.98'
-    implementation name: 'visrec-api-1.0.0'
     implementation 'com.binance.api:binance-api-client:1.0.1'
     implementation 'org.telegram:telegrambots:5.1.1'
 

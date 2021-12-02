@@ -5,7 +5,7 @@ import com.binance.api.client.domain.OrderStatus;
 import com.binance.api.client.domain.account.NewOrderResponse;
 import com.binance.api.client.domain.account.Order;
 import lombok.Data;
-import medvedev.com.dto.PriceChangeDto;
+import medvedev.com.dto.PriceHistoryDto;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
@@ -47,12 +47,12 @@ public class ExchangeHistoryEntity {
     @Column(name = "id_prev_exchange")
     private Long idPrevExchange;
 
-    public static ExchangeHistoryEntity from(NewOrderResponse response, PriceChangeDto priceChange) {
+    public static ExchangeHistoryEntity from(NewOrderResponse response, PriceHistoryDto priceHistory) {
         ExchangeHistoryEntity entity = new ExchangeHistoryEntity();
         entity.setDateTime(new Timestamp(response.getTransactTime()).toLocalDateTime());
         entity.setInitialAmount(response.getOrigQty());
         entity.setFinalAmount(response.getExecutedQty());
-        entity.setPrice(priceChange.getNewPrice().toString());
+        entity.setPrice(priceHistory.getPrice().toString());
         entity.setOperationType(response.getSide());
         entity.setOrderId(response.getOrderId());
         entity.setOrderStatus(response.getStatus());
@@ -64,7 +64,7 @@ public class ExchangeHistoryEntity {
         entity.setDateTime(new Timestamp(order.getTime()).toLocalDateTime());
         entity.setInitialAmount(order.getOrigQty());
         entity.setFinalAmount(order.getExecutedQty());
-        entity.setPrice((new BigDecimal(order.getPrice()).multiply(new BigDecimal("0.99"))).toString());
+        entity.setPrice((new BigDecimal(order.getPrice()).subtract(BigDecimal.ONE)).toString());
         entity.setOperationType(order.getSide());
         entity.setOrderId(order.getOrderId());
         entity.setOrderStatus(order.getStatus());

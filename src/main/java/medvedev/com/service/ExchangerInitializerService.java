@@ -3,8 +3,7 @@ package medvedev.com.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import medvedev.com.dto.PriceChangeDto;
-import medvedev.com.enums.CheckPriceType;
+import medvedev.com.dto.PriceHistoryDto;
 import medvedev.com.service.exchangefactory.ExchangeStrategy;
 import medvedev.com.service.exchangefactory.ExchangeStrategyFactory;
 import org.springframework.stereotype.Service;
@@ -17,15 +16,13 @@ public class ExchangerInitializerService {
     private final SystemStateService stateService;
     private final ExchangeStrategyFactory exchangeStrategyFactory;
 
-    public void initializeExchangeProcess(PriceChangeDto priceChangeOne, PriceChangeDto priceChangeTwo,
-                                          CheckPriceType checkPriceType) {
+    public void initializeExchangeProcess(PriceHistoryDto[] priceHistory) {
         if (stateService.isSystemLaunched()) {
             try {
-                ExchangeStrategy strategy = exchangeStrategyFactory.getExchangeStrategy(priceChangeOne, priceChangeTwo,
-                        checkPriceType);
-                strategy.launchExchangeAlgorithm(priceChangeTwo);
+                ExchangeStrategy strategy = exchangeStrategyFactory.getExchangeStrategy(priceHistory);
+                strategy.launchExchangeAlgorithm(priceHistory[0]);
             } catch (Exception ex) {
-                log.info(ex.getMessage());
+                log.info(ex.getMessage(), ex.getCause());
             }
         }
     }
