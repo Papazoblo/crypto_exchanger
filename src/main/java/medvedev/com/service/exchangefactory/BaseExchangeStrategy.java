@@ -3,7 +3,7 @@ package medvedev.com.service.exchangefactory;
 import com.binance.api.client.domain.account.NewOrderResponse;
 import medvedev.com.client.BinanceClient;
 import medvedev.com.dto.ExchangeHistoryDto;
-import medvedev.com.dto.PriceChangeDto;
+import medvedev.com.dto.PriceHistoryDto;
 import medvedev.com.entity.ExchangeHistoryEntity;
 import medvedev.com.enums.SystemConfiguration;
 import medvedev.com.service.CheckPriceDifferenceService;
@@ -36,11 +36,11 @@ public abstract class BaseExchangeStrategy implements ExchangeStrategy {
         this.systemConfigurationService = systemConfigurationService;
     }
 
-    protected abstract NewOrderResponse sendExchangeRequest(BigDecimal value, PriceChangeDto priceChange);
+    protected abstract NewOrderResponse sendExchangeRequest(BigDecimal value, PriceHistoryDto priceHistory);
 
-    protected ExchangeHistoryDto writeToHistory(NewOrderResponse response, PriceChangeDto priceChange) {
-        saveLastPrice(priceChange.getNewPrice());
-        return historyService.save(ExchangeHistoryEntity.from(response, priceChange));
+    protected ExchangeHistoryDto writeToHistory(NewOrderResponse response, PriceHistoryDto priceHistory) {
+        saveLastPrice(priceHistory.getPrice());
+        return historyService.save(ExchangeHistoryEntity.from(response, priceHistory));
     }
 
     protected void saveLastPrice(BigDecimalWrapper price) {

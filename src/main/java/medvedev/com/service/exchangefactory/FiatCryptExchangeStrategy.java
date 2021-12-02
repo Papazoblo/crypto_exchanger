@@ -4,7 +4,7 @@ import com.binance.api.client.domain.account.AssetBalance;
 import com.binance.api.client.domain.account.NewOrderResponse;
 import lombok.extern.log4j.Log4j2;
 import medvedev.com.client.BinanceClient;
-import medvedev.com.dto.PriceChangeDto;
+import medvedev.com.dto.PriceHistoryDto;
 import medvedev.com.enums.Currency;
 import medvedev.com.enums.SystemConfiguration;
 import medvedev.com.service.BalanceCheckerService;
@@ -40,34 +40,34 @@ public class FiatCryptExchangeStrategy extends BaseExchangeStrategy {
     }
 
     @Override
-    public void launchExchangeAlgorithm(PriceChangeDto priceChange) {
+    public void launchExchangeAlgorithm(PriceHistoryDto priceHistory) {
         AssetBalance balance = binanceClient.getBalanceByCurrency(Currency.USDT);
         BigDecimalWrapper exchangeAmount = balanceCheckerService.getAmountToExchange(balance.getFree());
-        BigDecimalWrapper convertedValue = convertFiatToCrypt(exchangeAmount, priceChange.getNewPrice());
+        BigDecimalWrapper convertedValue = convertFiatToCrypt(exchangeAmount, priceHistory.getPrice());
 
         if (historyService.isExistExchangeSell()) {
-            doExchange(convertedValue, priceChange);
+            doExchange(convertedValue, priceHistory);
         } else {
-            sendExchangeRequest(convertedValue, priceChange);
+            sendExchangeRequest(convertedValue, priceHistory);
         }
     }
 
     @Override
-    protected NewOrderResponse sendExchangeRequest(BigDecimal value, PriceChangeDto priceChange) {
+    protected NewOrderResponse sendExchangeRequest(BigDecimal value, PriceHistoryDto priceHistory) {
         NewOrderResponse response = binanceClient.createBuyOrder(value);
-        writeToHistory(response, priceChange);
+        writeToHistory(response, priceHistory);
         telegramPollingService.sendMessage(String.format(EXCHANGE_MESSAGE_PATTERN, "USDT => ETH",
-                priceChange.getNewPrice().toString(),
+                priceHistory.getPrice().toString(),
                 value.toString(),
-                value.multiply(priceChange.getNewPrice())));
+                value.multiply(priceHistory.getPrice())));
         return response;
     }
 
-    private void doExchange(BigDecimalWrapper amount, PriceChangeDto priceChange) {
+    private void doExchange(BigDecimalWrapper amount, PriceHistoryDto priceHistory) {
         double lastSellPrice = systemConfigurationService.findDoubleByName(SystemConfiguration.CURRENT_PRICE_LEVEL);
 
-        if (differenceService.isPriceDecreased(priceChange.getNewPrice(), lastSellPrice)) {
-            sendExchangeRequest(amount, priceChange);
+        if (differenceService.isPriceDecreased(priceHistory.getPrice(), lastSellPrice)) {
+            sendExchangeRequest(amount, priceHistory);
         }
     }
 

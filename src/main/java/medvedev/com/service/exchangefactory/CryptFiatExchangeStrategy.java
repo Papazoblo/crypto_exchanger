@@ -4,7 +4,7 @@ import com.binance.api.client.domain.account.NewOrderResponse;
 import lombok.extern.log4j.Log4j2;
 import medvedev.com.client.BinanceClient;
 import medvedev.com.dto.ExchangeHistoryDto;
-import medvedev.com.dto.PriceChangeDto;
+import medvedev.com.dto.PriceHistoryDto;
 import medvedev.com.enums.Currency;
 import medvedev.com.enums.SystemConfiguration;
 import medvedev.com.service.CheckPriceDifferenceService;
@@ -32,9 +32,9 @@ public class CryptFiatExchangeStrategy extends BaseExchangeStrategy {
     }
 
     @Override
-    public void launchExchangeAlgorithm(PriceChangeDto priceChange) {
-        List<ExchangeHistoryDto> openedExchanges = historyService.getOpenProfitableExchange(priceChange.getNewPrice());
-        List<ExchangeHistoryDto> list = getExchangesWithDifferencePrice(openedExchanges, priceChange.getNewPrice());
+    public void launchExchangeAlgorithm(PriceHistoryDto priceChange) {
+        List<ExchangeHistoryDto> openedExchanges = historyService.getOpenProfitableExchange(priceChange.getPrice());
+        List<ExchangeHistoryDto> list = getExchangesWithDifferencePrice(openedExchanges, priceChange.getPrice());
         double sumToExchange = getSumToExchange(list);
         if (sumToExchange > 0) {
             NewOrderResponse response = sendExchangeRequest(
@@ -42,15 +42,15 @@ public class CryptFiatExchangeStrategy extends BaseExchangeStrategy {
             ExchangeHistoryDto lastExchange = writeToHistory(response, priceChange);
             historyService.closingOpenedExchangeById(list, lastExchange);
             telegramPollingService.sendMessage(String.format(EXCHANGE_MESSAGE_PATTERN, "ETH => USDT",
-                    priceChange.getNewPrice().toString(),
+                    priceChange.getPrice().toString(),
                     sumToExchange,
-                    new BigDecimalWrapper(sumToExchange).multiply(priceChange.getNewPrice())
+                    new BigDecimalWrapper(sumToExchange).multiply(priceChange.getPrice())
                             .setScale(PRECISION_SIZE, RoundingMode.DOWN)));
         }
     }
 
     @Override
-    protected NewOrderResponse sendExchangeRequest(BigDecimal value, PriceChangeDto priceChange) {
+    protected NewOrderResponse sendExchangeRequest(BigDecimal value, PriceHistoryDto priceChange) {
         return binanceClient.createSellOrder(value);
     }
 
