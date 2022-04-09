@@ -7,11 +7,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum SystemConfiguration {
 
-    MIN_AMOUNT_EXCHANGE("Min amount exchange"),
-    MAX_AMOUNT_EXCHANGE("Max amount exchange"),
     SYSTEM_STATE("System state"),
-    MIN_DIFFERENCE_PRICE("Min difference price CRYPT FIAT"),
-    MIN_DIFFERENCE_PRICE_FIAT_CRYPT("Min difference price FIAT CRYPT"),
+    MIN_DIFFERENCE_PRICE("Min difference price"),
     CURRENT_PRICE_LEVEL("Current price level"),
     INVIOLABLE_RESIDUE("Inviolable residue"),
     AVAILABLE_MINUTES_COUNT_WITHOUT_EXCHANGE("Available minutes count without exchange");

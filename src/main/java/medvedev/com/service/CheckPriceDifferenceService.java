@@ -6,7 +6,6 @@ import medvedev.com.wrapper.BigDecimalWrapper;
 import org.springframework.stereotype.Service;
 
 import static medvedev.com.enums.SystemConfiguration.MIN_DIFFERENCE_PRICE;
-import static medvedev.com.enums.SystemConfiguration.MIN_DIFFERENCE_PRICE_FIAT_CRYPT;
 
 @Service
 @RequiredArgsConstructor
@@ -26,7 +25,7 @@ public class CheckPriceDifferenceService {
     public boolean isPriceDecreased(BigDecimalWrapper lastPrice, double recordPrice) {
         double lastPriceInDouble = lastPrice.doubleValue();
         return (recordPrice * HUNDRED / lastPriceInDouble) - HUNDRED >
-                systemConfigurationService.findDoubleByName(MIN_DIFFERENCE_PRICE_FIAT_CRYPT);
+                systemConfigurationService.findDoubleByName(MIN_DIFFERENCE_PRICE);
     }
 
     public String getPriceToExchange() {
@@ -38,7 +37,7 @@ public class CheckPriceDifferenceService {
                 );
             } else {
                 return String.valueOf(price - (price *
-                        systemConfigurationService.findDoubleByName(MIN_DIFFERENCE_PRICE_FIAT_CRYPT) / HUNDRED)
+                        systemConfigurationService.findDoubleByName(MIN_DIFFERENCE_PRICE) / HUNDRED)
                 );
             }
         })

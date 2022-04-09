@@ -26,12 +26,12 @@ public class PriceChangeEntity {
     @Column(name = "new")
     private String newPrice;
 
-    @Enumerated(EnumType.ORDINAL)
-    @Column(name = "id_state")
+    @Enumerated(EnumType.STRING)
+    @Column(name = "state")
     private PriceChangeState state;
 
-    @Enumerated(EnumType.ORDINAL)
-    @Column(name = "id_have_changes")
+    @Enumerated(EnumType.STRING)
+    @Column(name = "have_changes")
     private HavePriceChangeState haveChanges;
 
     public void setState(PriceChangeState newState) {

@@ -1,6 +1,7 @@
 package medvedev.com.entity;
 
 import lombok.Data;
+import medvedev.com.enums.ChatState;
 
 import javax.persistence.*;
 
@@ -13,7 +14,7 @@ public class ChatStateEntity {
     @Column(name = "id_chat")
     private Long idChat;
 
-    @ManyToOne
-    @JoinColumn(name = "id_state")
-    private StateEntity state;
+    @Column
+    @Enumerated(EnumType.STRING)
+    private ChatState state;
 }

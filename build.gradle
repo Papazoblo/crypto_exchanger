@@ -22,10 +22,10 @@ version '1.0-SNAPSHOT'
 repositories {
     mavenCentral()
     maven {
-        url 'C:/Its my/maven'
+        url 'D:/projects/maven'
     }
     flatDir {
-        dirs 'C:/Its my/maven'
+        dirs 'D:/projects/maven'
     }
 }
 

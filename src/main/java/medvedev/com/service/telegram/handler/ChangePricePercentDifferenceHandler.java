@@ -8,7 +8,6 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import java.util.function.BiConsumer;
 
 import static medvedev.com.enums.SystemConfiguration.MIN_DIFFERENCE_PRICE;
-import static medvedev.com.enums.SystemConfiguration.MIN_DIFFERENCE_PRICE_FIAT_CRYPT;
 
 @Service
 public class ChangePricePercentDifferenceHandler implements BaseHandler {
@@ -28,8 +27,7 @@ public class ChangePricePercentDifferenceHandler implements BaseHandler {
     private String processCommand(String command) {
         String[] splitMessage = command.split(" ");
         String response;
-        SystemConfiguration configuration = command.contains("cryptfiat") ? MIN_DIFFERENCE_PRICE
-                : MIN_DIFFERENCE_PRICE_FIAT_CRYPT;
+        SystemConfiguration configuration = MIN_DIFFERENCE_PRICE;
         switch (splitMessage.length) {
             case UPDATE_COMMAND_LENGTH:
                 response = saveValue(splitMessage[CONFIGURATION_VALUE], configuration);
