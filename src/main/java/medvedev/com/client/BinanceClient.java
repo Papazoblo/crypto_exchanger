@@ -3,6 +3,7 @@ package medvedev.com.client;
 import com.binance.api.client.BinanceApiClientFactory;
 import com.binance.api.client.BinanceApiRestClient;
 import com.binance.api.client.domain.OrderStatus;
+import com.binance.api.client.domain.TimeInForce;
 import com.binance.api.client.domain.account.*;
 import com.binance.api.client.domain.account.request.AllOrdersRequest;
 import com.binance.api.client.domain.account.request.OrderStatusRequest;
@@ -35,12 +36,12 @@ public class BinanceClient {
         return client.get24HrPriceStatistics(property.getSymbol());
     }
 
-    public NewOrderResponse createBuyOrder(BigDecimal quantity) {
-        return createNewOrder(NewOrder.marketBuy(property.getSymbol(), quantity.toString()));
+    public NewOrderResponse createBuyOrder(BigDecimal quantity, String price) {
+        return createNewOrder(NewOrder.limitBuy(property.getSymbol(), TimeInForce.GTC, quantity.toString(), price));
     }
 
-    public NewOrderResponse createSellOrder(BigDecimal quantity) {
-        return createNewOrder(NewOrder.marketSell(property.getSymbol(), quantity.toString()));
+    public NewOrderResponse createSellOrder(BigDecimal quantity, String price) {
+        return createNewOrder(NewOrder.limitSell(property.getSymbol(), TimeInForce.GTC, quantity.toString(), price));
     }
 
     public Order getLastFilledOrder() throws NotFoundException {

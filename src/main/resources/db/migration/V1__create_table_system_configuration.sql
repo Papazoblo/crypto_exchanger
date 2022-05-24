@@ -5,7 +5,7 @@ CREATE TABLE system_configuration
 );
 
 INSERT INTO system_configuration(name, value)
-VALUES ('SYSTEM_STATE', 'true'),
+VALUES ('SYSTEM_STATE', 'LAUNCHED'),
        ('MIN_DIFFERENCE_PRICE', '15'),
        ('CURRENT_PRICE', '3000'),
        ('INVIOLABLE_RESIDUE', '0.005'),

@@ -40,7 +40,7 @@ public class CryptFiatExchangeStrategy extends BaseExchangeStrategy {
             NewOrderResponse response = sendExchangeRequest(
                     new BigDecimal(sumToExchange).setScale(PRECISION_SIZE, RoundingMode.DOWN), priceChange);
             ExchangeHistoryDto lastExchange = writeToHistory(response, priceChange);
-            historyService.closingOpenedExchangeById(list, lastExchange);
+            historyService.closingOpenedExchangeById(list, lastExchange);//todo возможно надо будет закрывать только после выполнения лимитированного ордера
             telegramPollingService.sendMessage(String.format(EXCHANGE_MESSAGE_PATTERN, "ETH => USDT",
                     priceChange.getPrice().toString(),
                     sumToExchange,
@@ -51,7 +51,7 @@ public class CryptFiatExchangeStrategy extends BaseExchangeStrategy {
 
     @Override
     protected NewOrderResponse sendExchangeRequest(BigDecimal value, PriceHistoryDto priceChange) {
-        return binanceClient.createSellOrder(value);
+        return binanceClient.createSellOrder(value, priceChange.getPrice().toString());
     }
 
     private List<ExchangeHistoryDto> getExchangesWithDifferencePrice(List<ExchangeHistoryDto> histories,

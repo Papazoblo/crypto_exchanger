@@ -5,8 +5,10 @@ import com.binance.api.client.domain.account.NewOrderResponse;
 import lombok.extern.log4j.Log4j2;
 import medvedev.com.client.BinanceClient;
 import medvedev.com.dto.PriceHistoryDto;
+import medvedev.com.dto.SystemConfigurationDto;
 import medvedev.com.enums.Currency;
 import medvedev.com.enums.SystemConfiguration;
+import medvedev.com.exception.EntityNotFoundException;
 import medvedev.com.service.BalanceCheckerService;
 import medvedev.com.service.CheckPriceDifferenceService;
 import medvedev.com.service.ExchangeHistoryService;
@@ -54,7 +56,7 @@ public class FiatCryptExchangeStrategy extends BaseExchangeStrategy {
 
     @Override
     protected NewOrderResponse sendExchangeRequest(BigDecimal value, PriceHistoryDto priceHistory) {
-        NewOrderResponse response = binanceClient.createBuyOrder(value);
+        NewOrderResponse response = binanceClient.createBuyOrder(value, priceHistory.getPrice().toString());
         writeToHistory(response, priceHistory);
         telegramPollingService.sendMessage(String.format(EXCHANGE_MESSAGE_PATTERN, "USDT => ETH",
                 priceHistory.getPrice().toString(),
@@ -64,7 +66,14 @@ public class FiatCryptExchangeStrategy extends BaseExchangeStrategy {
     }
 
     private void doExchange(BigDecimalWrapper amount, PriceHistoryDto priceHistory) {
-        double lastSellPrice = systemConfigurationService.findDoubleByName(SystemConfiguration.CURRENT_PRICE_LEVEL);
+        double lastSellPrice;
+        try {
+            lastSellPrice = systemConfigurationService.findDoubleByName(SystemConfiguration.CURRENT_PRICE_LEVEL);
+        } catch (EntityNotFoundException ex) {
+            systemConfigurationService.save(new SystemConfigurationDto(SystemConfiguration.CURRENT_PRICE_LEVEL.name(),
+                    priceHistory.getPrice().toString()));
+            throw ex;
+        }
 
         if (differenceService.isPriceDecreased(priceHistory.getPrice(), lastSellPrice)) {
             sendExchangeRequest(amount, priceHistory);

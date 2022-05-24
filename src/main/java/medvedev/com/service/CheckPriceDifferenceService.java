@@ -16,15 +16,16 @@ public class CheckPriceDifferenceService {
     private final SystemConfigurationService systemConfigurationService;
     private final ExchangeHistoryService exchangeHistoryService;
 
-    public boolean isPriceIncreased(BigDecimalWrapper lastPrice, double recordPrice) {
-        double lastPriceInDouble = lastPrice.doubleValue();
-        return -((recordPrice * HUNDRED / lastPriceInDouble) - HUNDRED) >
+    public boolean isPriceIncreased(BigDecimalWrapper curPrice, double oldPrice) {
+        double curPriceInDouble = curPrice.doubleValue();
+        return -((oldPrice * HUNDRED / curPriceInDouble) - HUNDRED) >
                 systemConfigurationService.findDoubleByName(MIN_DIFFERENCE_PRICE);
     }
 
-    public boolean isPriceDecreased(BigDecimalWrapper lastPrice, double recordPrice) {
-        double lastPriceInDouble = lastPrice.doubleValue();
-        return (recordPrice * HUNDRED / lastPriceInDouble) - HUNDRED >
+    //если текущий курс упал
+    public boolean isPriceDecreased(BigDecimalWrapper curPrice, double oldPrice) {
+        double curPriceInDouble = curPrice.doubleValue();
+        return (oldPrice * HUNDRED / curPriceInDouble) - HUNDRED >
                 systemConfigurationService.findDoubleByName(MIN_DIFFERENCE_PRICE);
     }
 

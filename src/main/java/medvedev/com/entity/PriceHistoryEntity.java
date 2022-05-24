@@ -23,6 +23,10 @@ public class PriceHistoryEntity {
     @Enumerated(EnumType.STRING)
     private PriceChangeState changeState;
 
+    @ManyToOne
+    @JoinColumn(name = "history_block_id")
+    private PriceHistoryBlockEntity historyBlock;
+
     public BigDecimalWrapper getPrice() {
         return new BigDecimalWrapper(price);
     }
