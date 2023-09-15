@@ -45,6 +45,9 @@ public interface ExchangeHistoryRepository extends JpaRepository<ExchangeHistory
 
     @Transactional
     @Modifying
-    @Query(value = "UPDATE ExchangeHistoryEntity eh SET eh.idPrevExchange = :idPrev WHERE eh.id IN :ids")
-    void closingOpenedExchangeById(@Param("ids") List<Long> ids, @Param("idPrev") Long idPrev);
+    @Query(value = "UPDATE ExchangeHistoryEntity eh SET eh.idPrevExchange = :idPrev WHERE " +
+            " eh.idPrevExchange IS NULL " +
+            "            AND eh.operationType = 'BUY' " +
+            "            AND eh.orderStatus = 'FILLED' ")
+    void closingOpenedExchangeById(@Param("idPrev") Long idPrev);
 }

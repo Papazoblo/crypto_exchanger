@@ -6,7 +6,6 @@ import medvedev.com.dto.PriceHistoryBlockDto;
 import medvedev.com.entity.PriceHistoryBlockEntity;
 import medvedev.com.enums.PriceBlockStatus;
 import medvedev.com.repository.PriceHistoryBlockRepository;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -24,7 +23,8 @@ public class PriceHistoryBlockService {
     private final PriceHistoryBlockRepository repository;
     private final ExchangerInitializerService exchangerInitializerService;
 
-    @Scheduled(fixedRateString = "${fixed-rate.price-history-block-interval}")
+    //фиксирует курс блоками (мин, макс, средний)
+    //@Scheduled(fixedRateString = "${fixed-rate.price-history-block-interval}")
     public void createPriceHistoryBlockScheduler() {
         LocalDateTime curDate = LocalDateTime.now();
         getLastBlock(curDate).ifPresent(block -> close(block, curDate));

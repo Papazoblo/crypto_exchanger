@@ -36,11 +36,12 @@ public class CryptFiatExchangeStrategy extends BaseExchangeStrategy {
         List<ExchangeHistoryDto> openedExchanges = historyService.getOpenProfitableExchange(priceChange.getPrice());
         List<ExchangeHistoryDto> list = getExchangesWithDifferencePrice(openedExchanges, priceChange.getPrice());
         double sumToExchange = getSumToExchange(list);
+        log.info(String.format("Sum to exchange = %s", sumToExchange));
         if (sumToExchange > 0) {
             NewOrderResponse response = sendExchangeRequest(
                     new BigDecimal(sumToExchange).setScale(PRECISION_SIZE, RoundingMode.DOWN), priceChange);
             ExchangeHistoryDto lastExchange = writeToHistory(response, priceChange);
-            historyService.closingOpenedExchangeById(list, lastExchange);//todo возможно надо будет закрывать только после выполнения лимитированного ордера
+            //historyService.closingOpenedExchangeById(list, lastExchange);
             telegramPollingService.sendMessage(String.format(EXCHANGE_MESSAGE_PATTERN, "ETH => USDT",
                     priceChange.getPrice().toString(),
                     sumToExchange,
@@ -51,7 +52,7 @@ public class CryptFiatExchangeStrategy extends BaseExchangeStrategy {
 
     @Override
     protected NewOrderResponse sendExchangeRequest(BigDecimal value, PriceHistoryDto priceChange) {
-        return binanceClient.createSellOrder(value, priceChange.getPrice().toString());
+        return binanceClient.createSellOrder(value, priceChange.getPrice().subtract(BigDecimal.ONE).toString());
     }
 
     private List<ExchangeHistoryDto> getExchangesWithDifferencePrice(List<ExchangeHistoryDto> histories,
@@ -63,7 +64,7 @@ public class CryptFiatExchangeStrategy extends BaseExchangeStrategy {
 
     private double getSumToExchange(List<ExchangeHistoryDto> histories) {
         double sumOpenedExchange = histories.stream()
-                .mapToDouble(record -> record.getFinalAmount().doubleValue())
+                .mapToDouble(record -> record.getInitialAmount().doubleValue())
                 .sum();
         double inviolableResidue = systemConfigurationService.findDoubleByName(SystemConfiguration.INVIOLABLE_RESIDUE);
         sumOpenedExchange -= sumOpenedExchange * inviolableResidue;

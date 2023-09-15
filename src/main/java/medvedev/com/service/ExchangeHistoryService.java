@@ -43,12 +43,8 @@ public class ExchangeHistoryService {
         }
     }
 
-    public void closingOpenedExchangeById(List<ExchangeHistoryDto> openedExchange, ExchangeHistoryDto lastExchange) {
-        exchangeHistoryRepository.closingOpenedExchangeById(openedExchange.stream()
-                        .mapToLong(ExchangeHistoryDto::getId)
-                        .boxed()
-                        .collect(Collectors.toList()),
-                lastExchange.getId());
+    public void closingOpenedExchangeById(Long id) {
+        exchangeHistoryRepository.closingOpenedExchangeById(id);
     }
 
     public ExchangeHistoryDto getNewExchange() {

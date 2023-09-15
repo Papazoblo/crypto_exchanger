@@ -5,7 +5,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import medvedev.com.client.BinanceClient;
 import medvedev.com.enums.SystemConfiguration;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -20,7 +19,8 @@ public class CheckLastExchangeService {
     private final SystemConfigurationService systemConfigurationService;
     private final BinanceClient client;
 
-    @Scheduled(cron = "${exchange.cron.check-last-exchange}")
+    //по идее мониторим ордеры совершенные через интерфейс
+    //@Scheduled(cron = "${exchange.cron.check-last-exchange}")
     public void checkLastExchange() {
         LocalDateTime startTimeRange = timeService.nowMinusMinutes(systemConfigurationService
                 .findIntegerByName(SystemConfiguration.AVAILABLE_MINUTES_COUNT_WITHOUT_EXCHANGE));
