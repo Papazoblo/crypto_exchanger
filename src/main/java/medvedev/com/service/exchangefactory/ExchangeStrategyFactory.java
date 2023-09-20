@@ -2,7 +2,7 @@ package medvedev.com.service.exchangefactory;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import medvedev.com.client.BinanceClient;
+import medvedev.com.client.BinanceApiClient;
 import medvedev.com.dto.PriceHistoryBlockDto;
 import medvedev.com.enums.PriceChangeState;
 import medvedev.com.exception.NoSuitableStrategyException;
@@ -27,7 +27,7 @@ public class ExchangeStrategyFactory {
     private final BalanceCheckerService balanceCheckerService;
     private final CheckPriceDifferenceService checkPriceDifferenceService;
     private final TelegramPollingService telegramPollingService;
-    private final BinanceClient client;
+    private final BinanceApiClient client;
     private final SystemConfigurationService systemConfigurationService;
     private final ExchangeConfigDecryptorService configDecryptorService;
 
@@ -44,12 +44,12 @@ public class ExchangeStrategyFactory {
                     .collect(Collectors.joining(",")));
             if (validator instanceof BuyValidator) {
                 log.info("Fiat -> Crypt");
-                return new FiatCryptExchangeStrategy(balanceCheckerService, client, historyService,
-                        telegramPollingService, checkPriceDifferenceService, systemConfigurationService);
+//                return new FiatCryptExchangeStrategy(balanceCheckerService, client, historyService,
+//                        telegramPollingService, checkPriceDifferenceService, systemConfigurationService);
             } else {
-                log.info("Crypt -> Fiat");
-                return new CryptFiatExchangeStrategy(client, historyService, telegramPollingService,
-                        checkPriceDifferenceService, systemConfigurationService);
+//                log.info("Crypt -> Fiat");
+//                return new CryptFiatExchangeStrategy(client, historyService, telegramPollingService,
+//                        checkPriceDifferenceService, systemConfigurationService);
             }
         }
         throw new NoSuitableStrategyException();

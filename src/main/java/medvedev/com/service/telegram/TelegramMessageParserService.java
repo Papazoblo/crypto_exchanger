@@ -1,7 +1,7 @@
 package medvedev.com.service.telegram;
 
 import lombok.RequiredArgsConstructor;
-import medvedev.com.client.BinanceClient;
+import medvedev.com.client.BinanceApiClient;
 import medvedev.com.enums.ChatState;
 import medvedev.com.service.CheckPriceDifferenceService;
 import medvedev.com.service.SystemConfigurationService;
@@ -20,7 +20,7 @@ public class TelegramMessageParserService {
     private final UserService userService;
     private final ChatStateService chatStateService;
     private final SystemConfigurationService systemConfigurationService;
-    private final BinanceClient binanceClient;
+    private final BinanceApiClient binanceClient;
     private final CheckPriceDifferenceService checkPriceDifferentService;
 
     public BaseHandler parseMessage(Message message) {
@@ -35,7 +35,7 @@ public class TelegramMessageParserService {
 
     private BaseHandler getHandlerForAuthenticated(String commandLine) {
         String command = getCommandName(commandLine);
-        BaseHandler handler;
+        BaseHandler handler = null;
         switch (command) {
             case "/launched":
                 handler = new LaunchSystemHandler(systemConfigurationService);
@@ -44,10 +44,10 @@ public class TelegramMessageParserService {
                 handler = new StopSystemHandler(systemConfigurationService);
                 break;
             case "/balance":
-                handler = new CurrentBalanceHandler(binanceClient);
+//                handler = new CurrentBalanceHandler(binanceClient);
                 break;
             case "/price":
-                handler = new CurrentPriceHandler(binanceClient, checkPriceDifferentService);
+//                handler = new CurrentPriceHandler(binanceClient, checkPriceDifferentService);
                 break;
             case "/cryptfiat":
             case "/fiatcrypt":

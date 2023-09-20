@@ -1,9 +1,7 @@
 package medvedev.com.service;
 
-import com.binance.api.client.domain.account.Order;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import medvedev.com.client.BinanceClient;
 import medvedev.com.enums.SystemConfiguration;
 import org.springframework.stereotype.Service;
 
@@ -17,7 +15,7 @@ public class CheckLastExchangeService {
     private final ExchangeHistoryService exchangeHistoryService;
     private final TimeService timeService;
     private final SystemConfigurationService systemConfigurationService;
-    private final BinanceClient client;
+    //private final BinanceClient client;
 
     //по идее мониторим ордеры совершенные через интерфейс
     //@Scheduled(cron = "${exchange.cron.check-last-exchange}")
@@ -34,8 +32,8 @@ public class CheckLastExchangeService {
 
     private void checkLastOrder() {
         try {
-            Order order = client.getLastFilledOrder();
-            exchangeHistoryService.saveIfNotExist(order);
+            //Order order = client.getLastFilledOrder();
+            //exchangeHistoryService.saveIfNotExist(order);
         } catch (Exception ex) {
             log.debug("Order list is empty");
         }

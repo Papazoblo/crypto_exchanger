@@ -2,10 +2,9 @@ package medvedev.com.service.exchangefactory;
 
 import com.binance.api.client.domain.account.NewOrderResponse;
 import lombok.extern.log4j.Log4j2;
-import medvedev.com.client.BinanceClient;
+import medvedev.com.client.BinanceApiClient;
 import medvedev.com.dto.ExchangeHistoryDto;
 import medvedev.com.dto.PriceHistoryDto;
-import medvedev.com.enums.Currency;
 import medvedev.com.enums.SystemConfiguration;
 import medvedev.com.service.CheckPriceDifferenceService;
 import medvedev.com.service.ExchangeHistoryService;
@@ -23,7 +22,7 @@ public class CryptFiatExchangeStrategy extends BaseExchangeStrategy {
 
     private static final int PRECISION_SIZE = 4;
 
-    public CryptFiatExchangeStrategy(BinanceClient binanceClient,
+    public CryptFiatExchangeStrategy(BinanceApiClient binanceClient,
                                      ExchangeHistoryService historyService,
                                      TelegramPollingService telegramPollingService,
                                      CheckPriceDifferenceService differenceService,
@@ -52,7 +51,7 @@ public class CryptFiatExchangeStrategy extends BaseExchangeStrategy {
 
     @Override
     protected NewOrderResponse sendExchangeRequest(BigDecimal value, PriceHistoryDto priceChange) {
-        return binanceClient.createSellOrder(value, priceChange.getPrice().subtract(BigDecimal.ONE).toString());
+        return null;//binanceClient.createSellOrder(value, priceChange.getPrice().subtract(BigDecimal.ONE).toString());
     }
 
     private List<ExchangeHistoryDto> getExchangesWithDifferencePrice(List<ExchangeHistoryDto> histories,
@@ -68,7 +67,7 @@ public class CryptFiatExchangeStrategy extends BaseExchangeStrategy {
                 .sum();
         double inviolableResidue = systemConfigurationService.findDoubleByName(SystemConfiguration.INVIOLABLE_RESIDUE);
         sumOpenedExchange -= sumOpenedExchange * inviolableResidue;
-        return Double.parseDouble(binanceClient.getBalanceByCurrency(Currency.ETH).getFree()) > sumOpenedExchange
-                ? sumOpenedExchange : 0;
+        return 0;//Double.parseDouble(binanceClient.getBalanceByCurrency(Currency.ETH).getFree()) > sumOpenedExchange
+//                ? sumOpenedExchange : 0;
     }
 }

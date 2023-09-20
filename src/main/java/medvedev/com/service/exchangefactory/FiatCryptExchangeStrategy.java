@@ -1,12 +1,10 @@
 package medvedev.com.service.exchangefactory;
 
-import com.binance.api.client.domain.account.AssetBalance;
 import com.binance.api.client.domain.account.NewOrderResponse;
 import lombok.extern.log4j.Log4j2;
-import medvedev.com.client.BinanceClient;
+import medvedev.com.client.BinanceApiClient;
 import medvedev.com.dto.PriceHistoryDto;
 import medvedev.com.dto.SystemConfigurationDto;
-import medvedev.com.enums.Currency;
 import medvedev.com.enums.SystemConfiguration;
 import medvedev.com.exception.EntityNotFoundException;
 import medvedev.com.service.BalanceCheckerService;
@@ -31,7 +29,7 @@ public class FiatCryptExchangeStrategy extends BaseExchangeStrategy {
     private final ExchangeHistoryService historyService;
 
     public FiatCryptExchangeStrategy(BalanceCheckerService balanceCheckerService,
-                                     BinanceClient binanceClient,
+                                     BinanceApiClient binanceClient,
                                      ExchangeHistoryService historyService,
                                      TelegramPollingService telegramPollingService,
                                      CheckPriceDifferenceService differenceService,
@@ -43,26 +41,27 @@ public class FiatCryptExchangeStrategy extends BaseExchangeStrategy {
 
     @Override
     public void launchExchangeAlgorithm(PriceHistoryDto priceHistory) {
-        AssetBalance balance = binanceClient.getBalanceByCurrency(Currency.USDT);
-        BigDecimalWrapper exchangeAmount = balanceCheckerService.getAmountToExchange(balance.getFree());
-        BigDecimalWrapper convertedValue = convertFiatToCrypt(exchangeAmount, priceHistory.getPrice());
-
-        if (historyService.isExistExchangeSell()) {
-            doExchange(convertedValue, priceHistory);
-        } else {
-            sendExchangeRequest(convertedValue, priceHistory);
-        }
+//        AssetBalance balance = binanceClient.getBalanceByCurrency(Currency.USDT);
+//        BigDecimalWrapper exchangeAmount = balanceCheckerService.getAmountToExchange(balance.getFree());
+//        BigDecimalWrapper convertedValue = convertFiatToCrypt(exchangeAmount, priceHistory.getPrice());
+//
+//        if (historyService.isExistExchangeSell()) {
+//            doExchange(convertedValue, priceHistory);
+//        } else {
+//            sendExchangeRequest(convertedValue, priceHistory);
+//        }
     }
 
     @Override
     protected NewOrderResponse sendExchangeRequest(BigDecimal value, PriceHistoryDto priceHistory) {
-        NewOrderResponse response = binanceClient.createBuyOrder(value, priceHistory.getPrice().toString());
-        writeToHistory(response, priceHistory);
-        telegramPollingService.sendMessage(String.format(EXCHANGE_MESSAGE_PATTERN, "USDT => ETH",
-                priceHistory.getPrice().toString(),
-                value.toString(),
-                value.multiply(priceHistory.getPrice())));
-        return response;
+//        NewOrderResponse response = binanceClient.createBuyOrder(value, priceHistory.getPrice().toString());
+//        writeToHistory(response, priceHistory);
+//        telegramPollingService.sendMessage(String.format(EXCHANGE_MESSAGE_PATTERN, "USDT => ETH",
+//                priceHistory.getPrice().toString(),
+//                value.toString(),
+//                value.multiply(priceHistory.getPrice())));
+//        return response;
+        return null;
     }
 
     private void doExchange(BigDecimalWrapper amount, PriceHistoryDto priceHistory) {
