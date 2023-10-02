@@ -4,7 +4,6 @@ import com.binance.api.client.domain.account.NewOrderResponse;
 import medvedev.com.client.BinanceApiClient;
 import medvedev.com.dto.ExchangeHistoryDto;
 import medvedev.com.dto.PriceHistoryDto;
-import medvedev.com.entity.ExchangeHistoryEntity;
 import medvedev.com.enums.SystemConfiguration;
 import medvedev.com.service.CheckPriceDifferenceService;
 import medvedev.com.service.ExchangeHistoryService;
@@ -40,7 +39,7 @@ public abstract class BaseExchangeStrategy implements ExchangeStrategy {
 
     protected ExchangeHistoryDto writeToHistory(NewOrderResponse response, PriceHistoryDto priceHistory) {
         saveLastPrice(priceHistory.getPrice());
-        return historyService.save(ExchangeHistoryEntity.from(response, priceHistory));
+        return null;//historyService.save(ExchangeHistoryEntity.from(response, priceHistory));
     }
 
     protected void saveLastPrice(BigDecimalWrapper price) {

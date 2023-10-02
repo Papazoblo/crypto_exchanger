@@ -3,6 +3,9 @@ package medvedev.com.client;
 
 import medvedev.com.component.BinanceApiInterceptor;
 import medvedev.com.dto.response.*;
+import medvedev.com.enums.OrderSide;
+import medvedev.com.enums.OrderType;
+import medvedev.com.enums.TimeInForce;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,9 +34,9 @@ public interface BinanceApiClient {
 
     @PostMapping(value = "/api/v3/order")
     OrderInfoResponse newOrder(@RequestParam("symbol") String symbol,
-                               @RequestParam("side") String side,
-                               @RequestParam("type") String type,
-                               @RequestParam("timeInForce") String timeInForce,
+                               @RequestParam("side") OrderSide side,
+                               @RequestParam("type") OrderType type,
+                               @RequestParam("timeInForce") TimeInForce timeInForce,
                                @RequestParam("quantity") String quantity,
                                @RequestParam("price") String price,
                                @RequestParam("timestamp") Long timestamp,

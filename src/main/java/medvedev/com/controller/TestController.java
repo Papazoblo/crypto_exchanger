@@ -3,7 +3,9 @@ package medvedev.com.controller;
 import lombok.RequiredArgsConstructor;
 import medvedev.com.client.BinanceApiClient;
 import medvedev.com.dto.property.BinanceProperty;
+import medvedev.com.dto.response.BalanceInfoResponse;
 import medvedev.com.dto.response.OrderBookResponse;
+import medvedev.com.enums.Currency;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
@@ -26,6 +28,18 @@ public class TestController {
 
     @GetMapping("/test/{val}")
     public Object test(@PathVariable("val") Integer pos) {
+
+        BalanceInfoResponse balance = binanceApiClient.getBalanceInfo(Currency.USDT.name(),
+                binanceApiClient.getServerTime().getServerTime(),
+                property.getRectWindow()).get(0);
+        System.out.println(balance);
+
+        double balanceVal = (double) ((int) ((Double.parseDouble(balance.getFree()) * 10000)
+                / (Double.parseDouble(binanceApiClient.getCurrentPrice(property.getSymbol()).getPrice()) * 10000)
+                * 0.999 * 10000)) / 10000;
+        System.out.println(balanceVal);
+
+
         OrderBookResponse response = binanceApiClient.getOrderBook(property.getSymbol(), 2000);
         Double price = Double.valueOf(binanceApiClient.getCurrentPrice(property.getSymbol()).getPrice());
 

@@ -1,11 +1,9 @@
 package medvedev.com.entity;
 
-import com.binance.api.client.domain.OrderSide;
-import com.binance.api.client.domain.OrderStatus;
-import com.binance.api.client.domain.account.NewOrderResponse;
-import com.binance.api.client.domain.account.Order;
 import lombok.Data;
-import medvedev.com.dto.PriceHistoryDto;
+import medvedev.com.dto.response.OrderInfoResponse;
+import medvedev.com.enums.OrderSide;
+import medvedev.com.enums.OrderStatus;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
@@ -47,7 +45,7 @@ public class ExchangeHistoryEntity {
     @Column(name = "id_prev_exchange")
     private Long idPrevExchange;
 
-    public static ExchangeHistoryEntity from(NewOrderResponse response, PriceHistoryDto priceHistory) {
+    /*public static ExchangeHistoryEntity from(NewOrderResponse response, PriceHistoryDto priceHistory) {
         ExchangeHistoryEntity entity = new ExchangeHistoryEntity();
         entity.setDateTime(new Timestamp(response.getTransactTime()).toLocalDateTime());
         entity.setInitialAmount(response.getOrigQty());
@@ -57,9 +55,9 @@ public class ExchangeHistoryEntity {
         entity.setOrderId(response.getOrderId());
         entity.setOrderStatus(response.getStatus());
         return entity;
-    }
+    }*/
 
-    public static ExchangeHistoryEntity from(Order order) {
+    public static ExchangeHistoryEntity from(OrderInfoResponse order) {
         ExchangeHistoryEntity entity = new ExchangeHistoryEntity();
         entity.setDateTime(new Timestamp(order.getTime()).toLocalDateTime());
         entity.setInitialAmount(order.getOrigQty());

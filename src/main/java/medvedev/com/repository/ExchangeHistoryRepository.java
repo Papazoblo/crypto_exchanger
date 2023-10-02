@@ -1,8 +1,8 @@
 package medvedev.com.repository;
 
-import com.binance.api.client.domain.OrderSide;
-import com.binance.api.client.domain.OrderStatus;
 import medvedev.com.entity.ExchangeHistoryEntity;
+import medvedev.com.enums.OrderSide;
+import medvedev.com.enums.OrderStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -15,6 +15,10 @@ import java.util.Optional;
 
 @Repository
 public interface ExchangeHistoryRepository extends JpaRepository<ExchangeHistoryEntity, Long> {
+
+    @Query(value = "select eh.* from exchange_history eh " +
+            "order by eh.id desc limit 1", nativeQuery = true)
+    Optional<ExchangeHistoryEntity> findLastOrder();
 
     Optional<ExchangeHistoryEntity> findTopByOrderStatusOrderByIdDesc(OrderStatus orderStatus);
 

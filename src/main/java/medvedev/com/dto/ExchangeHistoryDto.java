@@ -1,10 +1,10 @@
 package medvedev.com.dto;
 
-import com.binance.api.client.domain.OrderSide;
-import com.binance.api.client.domain.OrderStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import medvedev.com.entity.ExchangeHistoryEntity;
+import medvedev.com.enums.OrderSide;
+import medvedev.com.enums.OrderStatus;
 import medvedev.com.wrapper.BigDecimalWrapper;
 
 import java.time.LocalDateTime;

@@ -1,11 +1,12 @@
 package medvedev.com.service;
 
-import com.binance.api.client.domain.OrderSide;
-import com.binance.api.client.domain.OrderStatus;
-import com.binance.api.client.domain.account.Order;
+
 import lombok.RequiredArgsConstructor;
 import medvedev.com.dto.ExchangeHistoryDto;
+import medvedev.com.dto.response.OrderInfoResponse;
 import medvedev.com.entity.ExchangeHistoryEntity;
+import medvedev.com.enums.OrderSide;
+import medvedev.com.enums.OrderStatus;
 import medvedev.com.exception.EntityNotFoundException;
 import medvedev.com.repository.ExchangeHistoryRepository;
 import org.springframework.stereotype.Service;
@@ -17,8 +18,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static com.binance.api.client.domain.OrderStatus.NEW;
-import static com.binance.api.client.domain.OrderStatus.PARTIALLY_FILLED;
+import static medvedev.com.enums.OrderStatus.NEW;
+import static medvedev.com.enums.OrderStatus.PARTIALLY_FILLED;
 
 @Service
 @RequiredArgsConstructor
@@ -30,11 +31,15 @@ public class ExchangeHistoryService {
         exchangeHistoryRepository.alterStatusById(status, id);
     }
 
+    public Optional<ExchangeHistoryEntity> findLastOrder() {
+        return exchangeHistoryRepository.findLastOrder();
+    }
+
     public ExchangeHistoryDto save(ExchangeHistoryEntity entity) {
         return ExchangeHistoryDto.from(exchangeHistoryRepository.save(entity));
     }
 
-    public boolean saveIfNotExist(Order order) {
+    public boolean saveIfNotExist(OrderInfoResponse order) {
         if (exchangeHistoryRepository.existsByOrderId(order.getOrderId())) {
             return false;
         } else {
@@ -88,9 +93,16 @@ public class ExchangeHistoryService {
 
     public ExchangeHistoryDto findLastSellExchange() {
         return exchangeHistoryRepository.findFirstByOperationTypeAndOrderStatusOrderByDateTimeDesc(OrderSide.SELL,
-                OrderStatus.FILLED)
+                        OrderStatus.FILLED)
                 .map(ExchangeHistoryDto::from)
                 .orElseThrow(() -> new EntityNotFoundException("Sell exchange not found"));
+    }
+
+    public ExchangeHistoryDto findLastBuyFilledExchange() {
+        return exchangeHistoryRepository.findFirstByOperationTypeAndOrderStatusOrderByDateTimeDesc(OrderSide.BUY,
+                        OrderStatus.FILLED)
+                .map(ExchangeHistoryDto::from)
+                .orElseThrow(() -> new EntityNotFoundException("Buy exchange not found"));
     }
 
     private static List<ExchangeHistoryDto> toDto(List<ExchangeHistoryEntity> entities) {

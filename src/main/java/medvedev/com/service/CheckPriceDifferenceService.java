@@ -1,7 +1,7 @@
 package medvedev.com.service;
 
-import com.binance.api.client.domain.OrderSide;
 import lombok.RequiredArgsConstructor;
+import medvedev.com.enums.OrderSide;
 import medvedev.com.wrapper.BigDecimalWrapper;
 import org.springframework.stereotype.Service;
 
