@@ -3,6 +3,7 @@ package medvedev.com.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import medvedev.com.client.BinanceApiClient;
+import medvedev.com.component.TimestampComponent;
 import medvedev.com.dto.ExchangeHistoryDto;
 import medvedev.com.dto.property.BinanceProperty;
 import medvedev.com.dto.response.BalanceInfoResponse;
@@ -31,6 +32,7 @@ public class ExchangeService {
     private final PriceProcessingService priceProcessingService;
     private final BinanceApiClient binanceApiClient;
     private final BinanceProperty binanceProperty;
+    private final TimestampComponent timestampComponent;
 
     @Scheduled(cron = "${exchange.cron.crete-buy-order}")
     public void createBuyOrder() {
@@ -50,7 +52,7 @@ public class ExchangeService {
                 TimeInForce.GTC,
                 getQuantityToBuy(priceToBuy),
                 priceToBuy.toString(),
-                binanceApiClient.getServerTime().getServerTime(),
+                timestampComponent.getTimestamp(),
                 binanceProperty.getRectWindow());*/
         OrderInfoResponse response = new OrderInfoResponse();
         response.setOrderId(new Random().nextLong());
@@ -73,13 +75,13 @@ public class ExchangeService {
                         log.info("Cancel order {}", item.getOrderId());
                         binanceApiClient.cancelOrder(binanceProperty.getSymbol(),
                                 item.getOrderId(),
-                                binanceApiClient.getServerTime().getServerTime(),
+                                timestampComponent.getTimestamp(),
                                 binanceProperty.getRectWindow());
                     } else {
                         log.info("Check order status {}", item.getOrderId());
                         OrderInfoResponse orderInfoResponse = binanceApiClient.getOrderInfo(binanceProperty.getSymbol(),
                                 item.getOrderId(),
-                                binanceApiClient.getServerTime().getServerTime(),
+                                timestampComponent.getTimestamp(),
                                 binanceProperty.getRectWindow());
                         item.setOrderStatus(orderInfoResponse.getStatus());
                         exchangeHistoryService.save(item);
@@ -109,7 +111,7 @@ public class ExchangeService {
                 TimeInForce.GTC,
                 getQuantityToSell(),
                 price.toString(),
-                binanceApiClient.getServerTime().getServerTime(),
+                timestampComponent.getTimestamp()),
                 binanceProperty.getRectWindow());*/
         OrderInfoResponse response = new OrderInfoResponse();
         response.setOrderId(new Random().nextLong());
@@ -132,13 +134,13 @@ public class ExchangeService {
                         log.info("Cancel order {}", item.getOrderId());
                         binanceApiClient.cancelOrder(binanceProperty.getSymbol(),
                                 item.getOrderId(),
-                                binanceApiClient.getServerTime().getServerTime(),
+                                timestampComponent.getTimestamp(),
                                 binanceProperty.getRectWindow());
                     } else {
                         log.info("Check order status {}", item.getOrderId());
                         OrderInfoResponse orderInfoResponse = binanceApiClient.getOrderInfo(binanceProperty.getSymbol(),
                                 item.getOrderId(),
-                                binanceApiClient.getServerTime().getServerTime(),
+                                timestampComponent.getTimestamp(),
                                 binanceProperty.getRectWindow());
                         item.setOrderStatus(orderInfoResponse.getStatus());
                         exchangeHistoryService.save(item);
@@ -148,7 +150,7 @@ public class ExchangeService {
 
     private String getQuantityToBuy(BigDecimalWrapper priceToBuy) {
         BalanceInfoResponse balance = binanceApiClient.getBalanceInfo(Currency.USDT.name(),
-                binanceApiClient.getServerTime().getServerTime(),
+                timestampComponent.getTimestamp(),
                 binanceProperty.getRectWindow()).get(0);
         return String.valueOf((double) ((int) ((Double.parseDouble(balance.getFree()) * 10000)
                 / (priceToBuy.doubleValue() * 10000)
@@ -157,7 +159,7 @@ public class ExchangeService {
 
     private String getQuantityToSell() {
         BalanceInfoResponse balance = binanceApiClient.getBalanceInfo(Currency.ETH.name(),
-                binanceApiClient.getServerTime().getServerTime(),
+                timestampComponent.getTimestamp(),
                 binanceProperty.getRectWindow()).get(0);
         return String.valueOf((double) ((int) ((Double.parseDouble(balance.getFree()) * 10000) * 0.999) / 10000));
     }
