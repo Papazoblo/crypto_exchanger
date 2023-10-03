@@ -1,12 +1,7 @@
 package medvedev.com.service;
 
-import com.binance.api.client.domain.market.TickerStatistics;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import medvedev.com.dto.PriceChangeDto;
-import medvedev.com.entity.PriceChangeEntity;
-import medvedev.com.enums.HavePriceChangeState;
-import medvedev.com.enums.PriceChangeState;
 import medvedev.com.repository.PriceChangeRepository;
 import medvedev.com.service.telegram.TelegramPollingService;
 import org.springframework.stereotype.Service;
@@ -21,7 +16,7 @@ public class PriceChangeService {
     private final PriceChangeRepository repository;
     private final TelegramPollingService telegramService;
 
-    public PriceChangeDto refresh(TickerStatistics ticker) {
+   /* public PriceChangeDto refresh(TickerStatistics ticker) {
         PriceChangeEntity priceChangeEntity = repository.findFirstById()
                 .map(price -> updatePriceChangeEntity(ticker, price))
                 .orElse(createPriceChangeEntity(ticker));
@@ -53,5 +48,5 @@ public class PriceChangeService {
         entity.setState(PriceChangeState.INCREASED);
         entity.setHaveChanges(HavePriceChangeState.WITHOUT_CHANGES);
         return entity;
-    }
+    }*/
 }

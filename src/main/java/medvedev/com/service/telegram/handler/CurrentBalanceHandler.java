@@ -1,10 +1,7 @@
 package medvedev.com.service.telegram.handler;
 
-import com.binance.api.client.domain.account.Account;
 import lombok.RequiredArgsConstructor;
 import medvedev.com.client.BinanceApiClient;
-import medvedev.com.enums.Currency;
-import medvedev.com.wrapper.BigDecimalWrapper;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.Message;
 
@@ -22,7 +19,7 @@ public class CurrentBalanceHandler implements BaseHandler {
 //        messageSender.accept(buildMessage(account), message.getChatId());
     }
 
-    private String buildMessage(Account account) {
+   /* private String buildMessage(Account account) {
         return new StringBuilder("*Balance info*\n_")
                 .append(Currency.ETH.name())
                 .append("_: ")
@@ -45,5 +42,5 @@ public class CurrentBalanceHandler implements BaseHandler {
         BigDecimalWrapper ethNumber = new BigDecimalWrapper(eth);
 
         return null;//price.multiply(ethNumber).add(usdNumber).divide(BigDecimal.ONE, 2, RoundingMode.DOWN).toString();
-    }
+    }*/
 }

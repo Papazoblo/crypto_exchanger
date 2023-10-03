@@ -1,17 +1,12 @@
 package medvedev.com.service.exchangefactory;
 
-import com.binance.api.client.domain.account.NewOrderResponse;
 import medvedev.com.client.BinanceApiClient;
-import medvedev.com.dto.ExchangeHistoryDto;
-import medvedev.com.dto.PriceHistoryDto;
 import medvedev.com.enums.SystemConfiguration;
 import medvedev.com.service.CheckPriceDifferenceService;
 import medvedev.com.service.ExchangeHistoryService;
 import medvedev.com.service.SystemConfigurationService;
 import medvedev.com.service.telegram.TelegramPollingService;
 import medvedev.com.wrapper.BigDecimalWrapper;
-
-import java.math.BigDecimal;
 
 public abstract class BaseExchangeStrategy implements ExchangeStrategy {
 
@@ -35,12 +30,6 @@ public abstract class BaseExchangeStrategy implements ExchangeStrategy {
         this.systemConfigurationService = systemConfigurationService;
     }
 
-    protected abstract NewOrderResponse sendExchangeRequest(BigDecimal value, PriceHistoryDto priceHistory);
-
-    protected ExchangeHistoryDto writeToHistory(NewOrderResponse response, PriceHistoryDto priceHistory) {
-        saveLastPrice(priceHistory.getPrice());
-        return null;//historyService.save(ExchangeHistoryEntity.from(response, priceHistory));
-    }
 
     protected void saveLastPrice(BigDecimalWrapper price) {
         systemConfigurationService.setConfigurationByName(SystemConfiguration.CURRENT_PRICE_LEVEL,

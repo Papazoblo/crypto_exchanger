@@ -1,12 +1,8 @@
 package medvedev.com.service.exchangefactory;
 
-import com.binance.api.client.domain.account.NewOrderResponse;
 import lombok.extern.log4j.Log4j2;
 import medvedev.com.client.BinanceApiClient;
 import medvedev.com.dto.PriceHistoryDto;
-import medvedev.com.dto.SystemConfigurationDto;
-import medvedev.com.enums.SystemConfiguration;
-import medvedev.com.exception.EntityNotFoundException;
 import medvedev.com.service.BalanceCheckerService;
 import medvedev.com.service.CheckPriceDifferenceService;
 import medvedev.com.service.ExchangeHistoryService;
@@ -14,9 +10,6 @@ import medvedev.com.service.SystemConfigurationService;
 import medvedev.com.service.telegram.TelegramPollingService;
 import medvedev.com.wrapper.BigDecimalWrapper;
 import org.springframework.stereotype.Service;
-
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 
 @Service
 @Log4j2
@@ -52,7 +45,7 @@ public class FiatCryptExchangeStrategy extends BaseExchangeStrategy {
 //        }
     }
 
-    @Override
+    /*@Override
     protected NewOrderResponse sendExchangeRequest(BigDecimal value, PriceHistoryDto priceHistory) {
 //        NewOrderResponse response = binanceClient.createBuyOrder(value, priceHistory.getPrice().toString());
 //        writeToHistory(response, priceHistory);
@@ -86,5 +79,5 @@ public class FiatCryptExchangeStrategy extends BaseExchangeStrategy {
             log.info("Not enough funds on balance");
         }
         return amount;
-    }
+    }*/
 }

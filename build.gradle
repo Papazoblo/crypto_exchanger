@@ -21,12 +21,12 @@ version '1.0-SNAPSHOT'
 
 repositories {
     mavenCentral()
-    maven {
+    /*maven {
         url 'D:/projects/maven'
     }
     flatDir {
         dirs 'D:/projects/maven'
-    }
+    }*/
 }
 
 bootJar {
@@ -47,7 +47,7 @@ dependencies {
 
     implementation 'com.fasterxml.jackson.core:jackson-annotations:2.10.1'
 
-    implementation 'com.binance.api:binance-api-client:1.0.1'
+    //implementation 'com.binance.api:binance-api-client:1.0.1'
     implementation 'org.telegram:telegrambots:5.1.1'
 
     implementation 'org.flywaydb:flyway-core:7.5.4'
