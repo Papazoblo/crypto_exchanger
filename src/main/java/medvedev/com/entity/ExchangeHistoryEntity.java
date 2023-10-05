@@ -7,7 +7,6 @@ import medvedev.com.enums.OrderStatus;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
 @Table(name = "exchange_history")
@@ -27,7 +26,10 @@ public class ExchangeHistoryEntity {
     private OrderSide operationType;
 
     @Column(name = "datetime")
-    private LocalDateTime dateTime;
+    private LocalDateTime createDate;
+
+    @Column(name = "update_date")
+    private LocalDateTime updateDate;
 
     @Column(name = "initial_amount")
     private String initialAmount;
@@ -45,6 +47,17 @@ public class ExchangeHistoryEntity {
     @Column(name = "id_prev_exchange")
     private Long idPrevExchange;
 
+    @PrePersist
+    public void prePersist() {
+        this.createDate = LocalDateTime.now();
+        this.updateDate = this.createDate;
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.updateDate = LocalDateTime.now();
+    }
+
     /*public static ExchangeHistoryEntity from(NewOrderResponse response, PriceHistoryDto priceHistory) {
         ExchangeHistoryEntity entity = new ExchangeHistoryEntity();
         entity.setDateTime(new Timestamp(response.getTransactTime()).toLocalDateTime());
@@ -59,10 +72,9 @@ public class ExchangeHistoryEntity {
 
     public static ExchangeHistoryEntity from(OrderInfoResponse order) {
         ExchangeHistoryEntity entity = new ExchangeHistoryEntity();
-        entity.setDateTime(new Timestamp(order.getTime()).toLocalDateTime());
         entity.setInitialAmount(order.getOrigQty());
         entity.setFinalAmount(order.getExecutedQty());
-        entity.setPrice((new BigDecimal(order.getPrice()).subtract(BigDecimal.ONE)).toString());
+        entity.setPrice(order.getPrice());
         entity.setOperationType(order.getSide());
         entity.setOrderId(order.getOrderId());
         entity.setOrderStatus(order.getStatus());

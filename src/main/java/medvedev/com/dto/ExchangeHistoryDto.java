@@ -28,7 +28,7 @@ public class ExchangeHistoryDto {
                 entity.getId(),
                 entity.getOrderId(),
                 entity.getOperationType(),
-                entity.getDateTime(),
+                entity.getCreateDate(),
                 new BigDecimalWrapper(entity.getInitialAmount()),
                 new BigDecimalWrapper(entity.getFinalAmount()),
                 new BigDecimalWrapper(entity.getPrice()),

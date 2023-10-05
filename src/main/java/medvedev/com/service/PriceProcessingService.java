@@ -42,29 +42,29 @@ public class PriceProcessingService {
     }
 
     public BigDecimalWrapper getPriceToBuy() {
-        OrderBookResponse response = binanceApiClient.getOrderBook(properties.getSymbol(), 1000);
+        OrderBookResponse response = binanceApiClient.getOrderBook(properties.getSymbol(), 100);
         return getMaxPriceByQuantity(response.getBids(), OrderSide.BUY);
     }
 
     public BigDecimalWrapper getPriceToSell() {
-        OrderBookResponse response = binanceApiClient.getOrderBook(properties.getSymbol(), 1000);
+        OrderBookResponse response = binanceApiClient.getOrderBook(properties.getSymbol(), 100);
         return getMaxPriceByQuantity(response.getAsks(), OrderSide.SELL);
     }
 
 
     private BigDecimalWrapper getMaxPriceByQuantity(List<String[]> list, OrderSide orderSide) {
         double price = Double.parseDouble(binanceApiClient.getCurrentPrice(properties.getSymbol()).getPrice());
-        Map<Integer, List<String[]>> mapPrice = list.stream()
-                .collect(groupingBy(item -> Integer.valueOf(item[PRICE_INDEX].substring(0, item[PRICE_INDEX].indexOf('.')))));
+        Map<Double, List<String[]>> mapPrice = list.stream()
+                .collect(groupingBy(item -> Double.valueOf(item[PRICE_INDEX].substring(0, item[PRICE_INDEX].indexOf('.') + 2))));
 
-        Optional<Map.Entry<Integer, List<String[]>>> max = mapPrice.entrySet().stream()
+        Optional<Map.Entry<Double, List<String[]>>> max = mapPrice.entrySet().stream()
                 .filter(entry -> Math.abs(entry.getKey() - price) < priceDifference)
                 .max((o1, o2) -> Double.compare(o1.getValue().stream()
-                        .filter(item -> (orderSide == OrderSide.BUY && Double.parseDouble(item[PRICE_INDEX]) < price)
+                        .filter(item -> (orderSide == OrderSide.BUY && Double.parseDouble(item[PRICE_INDEX]) < (price))
                                 || (orderSide == OrderSide.SELL && Double.parseDouble(item[PRICE_INDEX]) > price))
                         .mapToDouble(item -> Double.parseDouble(item[QUANTITY_INDEX]))
                         .sum(), o2.getValue().stream()
-                        .filter(item -> (orderSide == OrderSide.BUY && Double.parseDouble(item[PRICE_INDEX]) < price)
+                        .filter(item -> (orderSide == OrderSide.BUY && Double.parseDouble(item[PRICE_INDEX]) < (price))
                                 || (orderSide == OrderSide.SELL && Double.parseDouble(item[PRICE_INDEX]) > price))
                         .mapToDouble(item -> Double.parseDouble(item[QUANTITY_INDEX]))
                         .sum()));

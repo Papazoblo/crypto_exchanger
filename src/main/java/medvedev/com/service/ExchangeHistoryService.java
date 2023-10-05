@@ -92,14 +92,14 @@ public class ExchangeHistoryService {
     }
 
     public ExchangeHistoryDto findLastSellExchange() {
-        return exchangeHistoryRepository.findFirstByOperationTypeAndOrderStatusOrderByDateTimeDesc(OrderSide.SELL,
+        return exchangeHistoryRepository.findFirstByOperationTypeAndOrderStatusOrderByCreateDateDesc(OrderSide.SELL,
                         OrderStatus.FILLED)
                 .map(ExchangeHistoryDto::from)
                 .orElseThrow(() -> new EntityNotFoundException("Sell exchange not found"));
     }
 
     public ExchangeHistoryDto findLastBuyFilledExchange() {
-        return exchangeHistoryRepository.findFirstByOperationTypeAndOrderStatusOrderByDateTimeDesc(OrderSide.BUY,
+        return exchangeHistoryRepository.findFirstByOperationTypeAndOrderStatusOrderByCreateDateDesc(OrderSide.BUY,
                         OrderStatus.FILLED)
                 .map(ExchangeHistoryDto::from)
                 .orElseThrow(() -> new EntityNotFoundException("Buy exchange not found"));

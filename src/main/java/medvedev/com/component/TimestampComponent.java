@@ -18,12 +18,12 @@ public class TimestampComponent {
 
     @EventListener(ApplicationReadyEvent.class)
     public void applicationStartEvent() {
+        Long localTime1 = Timestamp.valueOf(LocalDateTime.now()).getTime();
         Long serverTime = binanceApiClient.getServerTime().getServerTime();
-        Long localTime = Timestamp.valueOf(LocalDateTime.now()).getTime();
-        serverTimeDifference = localTime - serverTime;
+        serverTimeDifference = localTime1 - serverTime;
     }
 
     public Long getTimestamp() {
-        return Timestamp.valueOf(LocalDateTime.now()).getTime() + serverTimeDifference;
+        return Timestamp.valueOf(LocalDateTime.now()).getTime() - serverTimeDifference;
     }
 }

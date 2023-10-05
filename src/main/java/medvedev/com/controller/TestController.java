@@ -5,6 +5,7 @@ import medvedev.com.client.BinanceApiClient;
 import medvedev.com.dto.property.BinanceProperty;
 import medvedev.com.dto.response.BalanceInfoResponse;
 import medvedev.com.dto.response.OrderBookResponse;
+import medvedev.com.dto.response.OrderInfoResponse;
 import medvedev.com.enums.Currency;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,8 +29,9 @@ public class TestController {
 
     @GetMapping("/test/{val}")
     public Object test(@PathVariable("val") Integer pos) {
-
-        BalanceInfoResponse balance = binanceApiClient.getBalanceInfo(Currency.USDT.name(),
+        List<OrderInfoResponse> response = binanceApiClient.getAllOrders(property.getSymbol(), binanceApiClient.getServerTime().getServerTime(),
+                5000L);
+       /* BalanceInfoResponse balance = binanceApiClient.getBalanceInfo(Currency.USDT.name(),
                 binanceApiClient.getServerTime().getServerTime(),
                 property.getRectWindow()).get(0);
         System.out.println(balance);
@@ -63,10 +65,10 @@ public class TestController {
                     .mapToDouble(item -> Double.parseDouble(item[QUANTITY_INDEX]))
                     .sum());
         });
-                /*.sorted(Comparator.comparing(Map.Entry::getKey))
+                *//*.sorted(Comparator.comparing(Map.Entry::getKey))
                 .forEach((entry) -> System.out.println(entry.getKey() + " " + entry.getValue().stream()
                         .mapToDouble(item -> Double.parseDouble(item[QUANTITY_INDEX]))
-                        .sum()));*/
+                        .sum()));*//*
 
         System.out.println("Покупки");
         Optional<Map.Entry<Integer, List<String[]>>> buyResult = response.getBids().stream()
@@ -113,7 +115,7 @@ public class TestController {
                 .append(" -> ")
                 .append(response.getAsks().get(response.getAsks().size() - 1)[PRICE_INDEX])
                 .append("\n\n\n"));
-        /*return binanceApiClient.getTradeList(property.getSymbol(), 1000).stream()
+        *//*return binanceApiClient.getTradeList(property.getSymbol(), 1000).stream()
                 .collect(Collectors.groupingBy(item -> Pair.of(item.getPrice(), item.getIsBuyerMaker())))
                 .entrySet().stream()
                 .map(entry -> {

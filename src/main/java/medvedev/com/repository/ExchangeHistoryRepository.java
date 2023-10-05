@@ -22,7 +22,7 @@ public interface ExchangeHistoryRepository extends JpaRepository<ExchangeHistory
 
     Optional<ExchangeHistoryEntity> findTopByOrderStatusOrderByIdDesc(OrderStatus orderStatus);
 
-    Optional<ExchangeHistoryEntity> findFirstByOperationTypeAndOrderStatusOrderByDateTimeDesc(OrderSide orderSide,
+    Optional<ExchangeHistoryEntity> findFirstByOperationTypeAndOrderStatusOrderByCreateDateDesc(OrderSide orderSide,
                                                                                               OrderStatus orderStatus);
 
     boolean existsByOrderId(Long idOrder);
@@ -31,7 +31,7 @@ public interface ExchangeHistoryRepository extends JpaRepository<ExchangeHistory
 
     Optional<ExchangeHistoryEntity> findFirstByOrderStatusIn(List<OrderStatus> statuses);
 
-    Optional<ExchangeHistoryEntity> findTopByOrderStatusAndOperationTypeOrderByDateTimeDesc(OrderStatus status,
+    Optional<ExchangeHistoryEntity> findTopByOrderStatusAndOperationTypeOrderByCreateDateDesc(OrderStatus status,
                                                                                             OrderSide type);
 
     @Query("SELECT ex " +
