@@ -2,11 +2,11 @@ package medvedev.com.entity;
 
 import lombok.Data;
 import medvedev.com.dto.response.OrderInfoResponse;
+import medvedev.com.enums.ExchangeCancelType;
 import medvedev.com.enums.OrderSide;
 import medvedev.com.enums.OrderStatus;
 
 import javax.persistence.*;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Table(name = "exchange_history")
@@ -44,8 +44,13 @@ public class ExchangeHistoryEntity {
     @Column(name = "order_status")
     private OrderStatus orderStatus;
 
-    @Column(name = "id_prev_exchange")
-    private Long idPrevExchange;
+    @ManyToOne
+    @JoinColumn(name = "id_prev_exchange")
+    private ExchangeHistoryEntity prevExchange;
+
+    @Column(name = "cancel_type")
+    @Enumerated(EnumType.STRING)
+    private ExchangeCancelType cancelType;
 
     @PrePersist
     public void prePersist() {

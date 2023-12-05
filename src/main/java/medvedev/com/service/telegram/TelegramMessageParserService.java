@@ -1,9 +1,7 @@
 package medvedev.com.service.telegram;
 
 import lombok.RequiredArgsConstructor;
-import medvedev.com.client.BinanceApiClient;
 import medvedev.com.enums.ChatState;
-import medvedev.com.service.CheckPriceDifferenceService;
 import medvedev.com.service.SystemConfigurationService;
 import medvedev.com.service.security.ChatStateService;
 import medvedev.com.service.security.UserService;
@@ -20,8 +18,6 @@ public class TelegramMessageParserService {
     private final UserService userService;
     private final ChatStateService chatStateService;
     private final SystemConfigurationService systemConfigurationService;
-    private final BinanceApiClient binanceClient;
-    private final CheckPriceDifferenceService checkPriceDifferentService;
 
     public BaseHandler parseMessage(Message message) {
         String commandLine = getCommandWithoutBotName(message.getText());

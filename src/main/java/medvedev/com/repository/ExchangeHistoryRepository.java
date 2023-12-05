@@ -36,7 +36,7 @@ public interface ExchangeHistoryRepository extends JpaRepository<ExchangeHistory
 
     @Query("SELECT ex " +
             "FROM ExchangeHistoryEntity ex " +
-            "WHERE ex.idPrevExchange IS NULL " +
+            "WHERE ex.prevExchange.id IS NULL " +
             "  AND ex.operationType = 'BUY' " +
             "  AND ex.orderStatus = 'FILLED' " +
             "ORDER BY ex.id DESC")
@@ -49,9 +49,9 @@ public interface ExchangeHistoryRepository extends JpaRepository<ExchangeHistory
 
     @Transactional
     @Modifying
-    @Query(value = "UPDATE ExchangeHistoryEntity eh SET eh.idPrevExchange = :idPrev WHERE " +
-            " eh.idPrevExchange IS NULL " +
-            "            AND eh.operationType = 'BUY' " +
-            "            AND eh.orderStatus = 'FILLED' ")
+    @Query(value = "UPDATE exchange_history SET id_prev_exchange = :idPrev WHERE " +
+            " id_prev_exchange IS NULL " +
+            "            AND type = 'BUY' " +
+            "            AND order_status = 'FILLED' ", nativeQuery = true)
     void closingOpenedExchangeById(@Param("idPrev") Long idPrev);
 }

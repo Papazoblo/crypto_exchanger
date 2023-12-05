@@ -2,6 +2,7 @@ package medvedev.com.wrapper;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
+import java.math.RoundingMode;
 
 public class BigDecimalWrapper extends BigDecimal {
 
@@ -22,8 +23,16 @@ public class BigDecimalWrapper extends BigDecimal {
         super(val);
     }
 
+    public BigDecimalWrapper(BigDecimal val) {
+        super(val.toString());
+    }
+
     public boolean isLessThen(BigDecimal val) {
         return compareTo(val) == LESS;
+    }
+
+    public BigDecimalWrapper setScale(int scale, RoundingMode roundingMode) {
+        return new BigDecimalWrapper(super.setScale(scale, roundingMode));
     }
 
     public boolean isGreaterThen(BigDecimal val) {

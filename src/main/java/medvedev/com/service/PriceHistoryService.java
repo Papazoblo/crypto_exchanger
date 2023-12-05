@@ -7,6 +7,7 @@ import medvedev.com.repository.PriceHistoryRepository;
 import medvedev.com.wrapper.BigDecimalWrapper;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
@@ -15,11 +16,10 @@ public class PriceHistoryService {
 
     private final PriceHistoryRepository repository;
     private final PriceHistoryBlockService priceHistoryBlockService;
-    private final TimeService timeService;
 
     public void savePrice(BigDecimalWrapper newPrice) {
         PriceHistoryEntity entity = new PriceHistoryEntity();
-        entity.setDate(timeService.now());
+        entity.setDate(LocalDateTime.now());
         entity.setPrice(newPrice.toString());
         getLastPrice().ifPresent(price -> entity.setChangeState(processChangeState(price.getPrice(), newPrice)));
         priceHistoryBlockService.getLastBlock(entity.getDate()).ifPresent(block -> {
@@ -29,8 +29,12 @@ public class PriceHistoryService {
         });
     }
 
+    public boolean isPriceDifferenceLong() {
+        return repository.isPriceDifferenceLong();
+    }
+
     public Optional<PriceHistoryEntity> getLastPrice() {
-        return repository.findFirstByDateGreaterThanOrderByDateDesc(timeService.nowMinusMinutes(60));
+        return repository.findFirstByDateIsNotNullOrderByDateDesc();
     }
 
     private PriceChangeState processChangeState(BigDecimalWrapper from, BigDecimalWrapper to) {

@@ -8,6 +8,7 @@ import medvedev.com.enums.OrderStatus;
 import medvedev.com.wrapper.BigDecimalWrapper;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Data
 @AllArgsConstructor
@@ -33,7 +34,7 @@ public class ExchangeHistoryDto {
                 new BigDecimalWrapper(entity.getFinalAmount()),
                 new BigDecimalWrapper(entity.getPrice()),
                 entity.getOrderStatus(),
-                entity.getIdPrevExchange()
+                Optional.ofNullable(entity.getPrevExchange()).map(ExchangeHistoryEntity::getId).orElse(null)
         );
     }
 }

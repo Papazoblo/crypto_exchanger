@@ -2,7 +2,6 @@ package medvedev.com.service.telegram.handler;
 
 import lombok.RequiredArgsConstructor;
 import medvedev.com.client.BinanceApiClient;
-import medvedev.com.service.CheckPriceDifferenceService;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.Message;
 
@@ -13,7 +12,6 @@ import java.util.function.BiConsumer;
 public class CurrentPriceHandler implements BaseHandler {
 
     private final BinanceApiClient binanceClient;
-    private final CheckPriceDifferenceService priceDifferenceService;
 
     @Override
     public void run(Message message, BiConsumer<String, Long> messageSender) {

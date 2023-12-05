@@ -39,12 +39,15 @@ public class ExchangeHistoryService {
         return ExchangeHistoryDto.from(exchangeHistoryRepository.save(entity));
     }
 
-    public boolean saveIfNotExist(OrderInfoResponse order) {
-        if (exchangeHistoryRepository.existsByOrderId(order.getOrderId())) {
-            return false;
-        } else {
-            exchangeHistoryRepository.save(ExchangeHistoryEntity.from(order));
-            return true;
+    public void saveIfNotExist(ExchangeHistoryEntity lastExchange, OrderInfoResponse order) {
+        if (!exchangeHistoryRepository.existsByOrderId(order.getOrderId())) {
+            ExchangeHistoryEntity newExchangeItem = ExchangeHistoryEntity.from(order);
+            if (lastExchange != null && lastExchange.getOperationType() == OrderSide.SELL && newExchangeItem.getOperationType() == OrderSide.BUY) {
+                exchangeHistoryRepository.save(newExchangeItem);
+            } else {
+                newExchangeItem.setPrevExchange(lastExchange);
+                exchangeHistoryRepository.save(newExchangeItem);
+            }
         }
     }
 

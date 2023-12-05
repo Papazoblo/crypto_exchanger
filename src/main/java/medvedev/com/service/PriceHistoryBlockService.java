@@ -21,11 +21,11 @@ public class PriceHistoryBlockService {
     private static final int HISTORY_LIST_SIZE = 10;
 
     private final PriceHistoryBlockRepository repository;
-    private final ExchangerInitializerService exchangerInitializerService;
+//    private final ExchangerInitializerService exchangerInitializerService;
 
     //фиксирует курс блоками (мин, макс, средний)
     //@Scheduled(fixedRateString = "${fixed-rate.price-history-block-interval}")
-    public void createPriceHistoryBlockScheduler() {
+    /*public void createPriceHistoryBlockScheduler() {
         LocalDateTime curDate = LocalDateTime.now();
         getLastBlock(curDate).ifPresent(block -> close(block, curDate));
         create();
@@ -37,7 +37,7 @@ public class PriceHistoryBlockService {
             exchangerInitializerService.initializeExchangeProcess(blockList);
         }
 
-    }
+    }*/
 
     public Optional<PriceHistoryBlockEntity> getLastBlock(LocalDateTime curDateTime) {
         return repository.findFirstByDateOpenLessThanAndStatusOrderByDateOpenDesc(curDateTime, PriceBlockStatus.OPEN);
