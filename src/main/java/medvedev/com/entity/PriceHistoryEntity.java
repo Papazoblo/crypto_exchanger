@@ -1,6 +1,7 @@
 package medvedev.com.entity;
 
 import lombok.Data;
+import lombok.ToString;
 import medvedev.com.enums.PriceChangeState;
 import medvedev.com.wrapper.BigDecimalWrapper;
 
@@ -25,6 +26,7 @@ public class PriceHistoryEntity {
 
     @ManyToOne
     @JoinColumn(name = "history_block_id")
+    @ToString.Exclude
     private PriceHistoryBlockEntity historyBlock;
 
     public BigDecimalWrapper getPrice() {

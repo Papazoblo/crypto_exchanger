@@ -5,9 +5,11 @@ import medvedev.com.dto.response.OrderInfoResponse;
 import medvedev.com.enums.ExchangeCancelType;
 import medvedev.com.enums.OrderSide;
 import medvedev.com.enums.OrderStatus;
+import medvedev.com.wrapper.BigDecimalWrapper;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Table(name = "exchange_history")
 @Entity
@@ -37,6 +39,12 @@ public class ExchangeHistoryEntity {
     @Column(name = "final_amount")
     private String finalAmount;
 
+    @Column(name = "min_price_exchange")
+    private String minPriceExchange;
+
+    @Column(name = "increment_step")
+    private Integer incrementStep;
+
     @Column(name = "price")
     private String price;
 
@@ -58,31 +66,40 @@ public class ExchangeHistoryEntity {
         this.updateDate = this.createDate;
     }
 
+    public BigDecimalWrapper getFinalAmount() {
+        return Optional.ofNullable(finalAmount).map(BigDecimalWrapper::new).orElse(null);
+    }
+
+    public BigDecimalWrapper getInitialAmount() {
+        return Optional.ofNullable(initialAmount).map(BigDecimalWrapper::new).orElse(null);
+    }
+
+    public BigDecimalWrapper getMinPriceExchange() {
+        return Optional.ofNullable(minPriceExchange).map(BigDecimalWrapper::new).orElse(null);
+    }
+
+    public BigDecimalWrapper getPrice() {
+        return Optional.ofNullable(price).map(BigDecimalWrapper::new).orElse(null);
+    }
+
     @PreUpdate
     public void preUpdate() {
         this.updateDate = LocalDateTime.now();
     }
-
-    /*public static ExchangeHistoryEntity from(NewOrderResponse response, PriceHistoryDto priceHistory) {
-        ExchangeHistoryEntity entity = new ExchangeHistoryEntity();
-        entity.setDateTime(new Timestamp(response.getTransactTime()).toLocalDateTime());
-        entity.setInitialAmount(response.getOrigQty());
-        entity.setFinalAmount(response.getExecutedQty());
-        entity.setPrice(priceHistory.getPrice().toString());
-        entity.setOperationType(response.getSide());
-        entity.setOrderId(response.getOrderId());
-        entity.setOrderStatus(response.getStatus());
-        return entity;
-    }*/
 
     public static ExchangeHistoryEntity from(OrderInfoResponse order) {
         ExchangeHistoryEntity entity = new ExchangeHistoryEntity();
         entity.setInitialAmount(order.getOrigQty());
         entity.setFinalAmount(order.getExecutedQty());
         entity.setPrice(order.getPrice());
+        if (entity.getMinPriceExchange() == null) {
+            entity.setMinPriceExchange(entity.getPrice().toString());
+        }
         entity.setOperationType(order.getSide());
         entity.setOrderId(order.getOrderId());
         entity.setOrderStatus(order.getStatus());
+        entity.setIncrementStep(0);
         return entity;
     }
+
 }

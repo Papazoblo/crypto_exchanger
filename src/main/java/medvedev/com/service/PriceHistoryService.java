@@ -1,6 +1,7 @@
 package medvedev.com.service;
 
 import lombok.RequiredArgsConstructor;
+import medvedev.com.component.ExchangeProperties;
 import medvedev.com.entity.PriceHistoryEntity;
 import medvedev.com.enums.PriceChangeState;
 import medvedev.com.repository.PriceHistoryRepository;
@@ -16,6 +17,7 @@ public class PriceHistoryService {
 
     private final PriceHistoryRepository repository;
     private final PriceHistoryBlockService priceHistoryBlockService;
+    private final ExchangeProperties exchangeProperties;
 
     public void savePrice(BigDecimalWrapper newPrice) {
         PriceHistoryEntity entity = new PriceHistoryEntity();
@@ -30,7 +32,7 @@ public class PriceHistoryService {
     }
 
     public boolean isPriceDifferenceLong() {
-        return repository.isPriceDifferenceLong();
+        return repository.isPriceDifferenceLong(exchangeProperties.getBoundUpdatePrice());
     }
 
     public Optional<PriceHistoryEntity> getLastPrice() {

@@ -6,6 +6,7 @@ import medvedev.com.dto.PriceHistoryBlockDto;
 import medvedev.com.entity.PriceHistoryBlockEntity;
 import medvedev.com.enums.PriceBlockStatus;
 import medvedev.com.repository.PriceHistoryBlockRepository;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -21,23 +22,23 @@ public class PriceHistoryBlockService {
     private static final int HISTORY_LIST_SIZE = 10;
 
     private final PriceHistoryBlockRepository repository;
-//    private final ExchangerInitializerService exchangerInitializerService;
 
     //фиксирует курс блоками (мин, макс, средний)
-    //@Scheduled(fixedRateString = "${fixed-rate.price-history-block-interval}")
-    /*public void createPriceHistoryBlockScheduler() {
+    @Scheduled(cron = "${exchange.cron.fixed-price-block}")
+    public void createPriceHistoryBlockScheduler() {
         LocalDateTime curDate = LocalDateTime.now();
         getLastBlock(curDate).ifPresent(block -> close(block, curDate));
         create();
 
-        List<PriceHistoryBlockDto> blockList = getLastBlockList();
-        if (blockList.size() < HISTORY_LIST_SIZE) {
-            log.info("Price history array is empty");
-        } else {
-            exchangerInitializerService.initializeExchangeProcess(blockList);
-        }
+//        List<PriceHistoryBlockDto> blockList = getLastBlockList();
+//        if (blockList.size() < HISTORY_LIST_SIZE) {
+//            log.info("Price history array is empty");
+//        } else {
+//            exchangerInitializerService.initializeExchangeProcess(blockList);
+//        }
 
-    }*/
+        repository.deleteAll(repository.findIdsByOpenDate(LocalDateTime.now().minusMonths(6)));
+    }
 
     public Optional<PriceHistoryBlockEntity> getLastBlock(LocalDateTime curDateTime) {
         return repository.findFirstByDateOpenLessThanAndStatusOrderByDateOpenDesc(curDateTime, PriceBlockStatus.OPEN);
@@ -58,12 +59,13 @@ public class PriceHistoryBlockService {
 
     public void refresh() {
         List<PriceHistoryBlockEntity> blocks = repository.findAllByStatus(PriceBlockStatus.OPEN);
+        blocks.forEach(block -> block.setDateClose(LocalDateTime.now()));
         repository.saveAll(blocks);
     }
 
     private List<PriceHistoryBlockDto> getLastBlockList() {
         return repository.findAllByDateCloseGreaterThanAndStatusOrderByDateOpenDesc(
-                LocalDateTime.now().minusDays(1L), PriceBlockStatus.CLOSE).stream()
+                        LocalDateTime.now().minusDays(1L), PriceBlockStatus.CLOSE).stream()
                 .limit(PriceHistoryBlockService.HISTORY_LIST_SIZE)
                 .map(PriceHistoryBlockDto::of)
                 .collect(Collectors.toList());

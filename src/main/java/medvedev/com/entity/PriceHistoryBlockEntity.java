@@ -1,6 +1,7 @@
 package medvedev.com.entity;
 
 import lombok.Data;
+import lombok.ToString;
 import medvedev.com.enums.PriceBlockStatus;
 import medvedev.com.enums.PriceChangeState;
 import medvedev.com.wrapper.BigDecimalWrapper;
@@ -42,7 +43,8 @@ public class PriceHistoryBlockEntity {
     @Column(name = "avg")
     private String avg;
 
-    @OneToMany(mappedBy = "historyBlock")
+    @OneToMany(mappedBy = "historyBlock", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
     private List<PriceHistoryEntity> historyList = new ArrayList<>();
 
     @Column(name = "avg_change_type")

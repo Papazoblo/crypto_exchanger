@@ -3,6 +3,8 @@ package medvedev.com.repository;
 import medvedev.com.entity.PriceHistoryBlockEntity;
 import medvedev.com.enums.PriceBlockStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -21,4 +23,8 @@ public interface PriceHistoryBlockRepository extends JpaRepository<PriceHistoryB
                                                                                               PriceBlockStatus status);
 
     Optional<PriceHistoryBlockEntity> findFirstByStatusOrderByDateOpenDesc(PriceBlockStatus status);
+
+    @Query("select pb from PriceHistoryBlockEntity pb " +
+            "where pb.dateOpen < :date")
+    List<PriceHistoryBlockEntity> findIdsByOpenDate(@Param("date") LocalDateTime date);
 }
