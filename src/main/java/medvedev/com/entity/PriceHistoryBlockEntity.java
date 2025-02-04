@@ -43,6 +43,12 @@ public class PriceHistoryBlockEntity {
     @Column(name = "avg")
     private String avg;
 
+    @Column(name = "open")
+    private String open;
+
+    @Column(name = "close")
+    private String close;
+
     @OneToMany(mappedBy = "historyBlock", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     private List<PriceHistoryEntity> historyList = new ArrayList<>();

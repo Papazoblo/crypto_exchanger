@@ -11,6 +11,7 @@ import medvedev.com.entity.ExchangeHistoryEntity;
 import medvedev.com.enums.ExchangeCancelType;
 import medvedev.com.enums.OrderSide;
 import medvedev.com.wrapper.BigDecimalWrapper;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -32,10 +33,14 @@ public class PriceProcessingService {
     private final BinanceProperty properties;
     private final BinanceApiClient binanceApiClient;
     private final ExchangeProperties exchangeProperties;
+    private final PriceHistoryService priceHistoryService;
 
 
+    @Scheduled(cron = "${exchange.cron.every-3-sec}")
     public BigDecimalWrapper getCurrentPrice() {
-        return new BigDecimalWrapper(binanceApiClient.getCurrentPrice(properties.getSymbol()).getPrice());
+        BigDecimalWrapper currentPrice = new BigDecimalWrapper(binanceApiClient.getCurrentPrice(properties.getSymbol()).getPrice());
+        priceHistoryService.savePrice(currentPrice);
+        return currentPrice;
     }
 
     private ExchangeHistoryEntity getFirstOrderBy(ExchangeHistoryEntity order) {

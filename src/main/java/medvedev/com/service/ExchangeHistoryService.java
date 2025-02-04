@@ -27,10 +27,6 @@ public class ExchangeHistoryService {
 
     private final ExchangeHistoryRepository exchangeHistoryRepository;
 
-    public void alterStatusById(Long id, OrderStatus status) {
-        exchangeHistoryRepository.alterStatusById(status, id);
-    }
-
     public Optional<ExchangeHistoryEntity> findLastOrder() {
         return exchangeHistoryRepository.findLastOrder();
     }

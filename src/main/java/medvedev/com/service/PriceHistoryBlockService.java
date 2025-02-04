@@ -6,11 +6,14 @@ import medvedev.com.dto.PriceHistoryBlockDto;
 import medvedev.com.entity.PriceHistoryBlockEntity;
 import medvedev.com.enums.PriceBlockStatus;
 import medvedev.com.repository.PriceHistoryBlockRepository;
+import org.springframework.data.util.Pair;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -22,6 +25,7 @@ public class PriceHistoryBlockService {
     private static final int HISTORY_LIST_SIZE = 10;
 
     private final PriceHistoryBlockRepository repository;
+    private final NamedParameterJdbcTemplate jdbcTemplate;
 
     //фиксирует курс блоками (мин, макс, средний)
     @Scheduled(cron = "${exchange.cron.fixed-price-block}")
@@ -50,6 +54,11 @@ public class PriceHistoryBlockService {
     }
 
     public void close(PriceHistoryBlockEntity entity, LocalDateTime curDate) {
+
+        Pair<String, String> openClosePriceByBlock = getOpenClosePrice(entity.getId());
+
+        entity.setOpen(openClosePriceByBlock.getFirst());
+        entity.setClose(openClosePriceByBlock.getSecond());
         entity.setDateClose(curDate);
         entity.setStatus(PriceBlockStatus.CLOSE);
         repository.findFirstByStatusOrderByDateOpenDesc(PriceBlockStatus.CLOSE).ifPresent(block ->
@@ -69,5 +78,17 @@ public class PriceHistoryBlockService {
                 .limit(PriceHistoryBlockService.HISTORY_LIST_SIZE)
                 .map(PriceHistoryBlockDto::of)
                 .collect(Collectors.toList());
+    }
+
+    public Pair<String, String> getOpenClosePrice(Long blockId) {
+        return jdbcTemplate.queryForObject("select\n" +
+                        "    (select price\n" +
+                        "    from price_history\n" +
+                        "    where date = (select min(date) from price_history where history_block_id = :blockId)) as openPrice,\n" +
+                        "    (select price\n" +
+                        "     from price_history\n" +
+                        "     where date = (select max(date) from price_history where history_block_id = :blockId)) as closePrice;\n",
+                Map.of("blockId", blockId),
+                (rs, num) -> Pair.of(rs.getString("openPrice"), rs.getString("closePrice")));
     }
 }

@@ -14,7 +14,6 @@ import medvedev.com.entity.ExchangeHistoryEntity;
 import medvedev.com.enums.*;
 import medvedev.com.service.telegram.TelegramPollingService;
 import medvedev.com.wrapper.BigDecimalWrapper;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -30,7 +29,7 @@ import static medvedev.com.enums.OrderStatus.*;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class ExchangeServiceNew {
+public class ExchangeService {
 
     protected static final String EXCHANGE_MESSAGE_PATTERN = "*%s*\n_price_: %s\n" +
             "_from_: %s\n_to_: %s";
@@ -46,7 +45,7 @@ public class ExchangeServiceNew {
     private final PriceHistoryService priceHistoryService;
 
 
-    @Scheduled(cron = "${exchange.cron.every-3-sec}")
+    //@Scheduled(cron = "${exchange.cron.every-3-sec}")
     public void createBuyOrder() {
 
         Optional<ExchangeHistoryEntity> lastOrder = exchangeHistoryService.findLastOrder();
@@ -86,7 +85,7 @@ public class ExchangeServiceNew {
         }
     }
 
-    @Scheduled(cron = "${exchange.cron.every-6-sec}")
+    //@Scheduled(cron = "${exchange.cron.every-6-sec}")
     public void createSellOrder() {
 
         Optional<ExchangeHistoryEntity> lastOrder = exchangeHistoryService.findLastOrder();
@@ -100,7 +99,7 @@ public class ExchangeServiceNew {
      * если покупка, то отмена по курсу
      * если продажа, то отмена по времени
      */
-    @Scheduled(cron = "${exchange.cron.every-3-sec}")
+    //@Scheduled(cron = "${exchange.cron.every-3-sec}")
     public void cancelOrderToPriceCorrecting() {
         BigDecimal currentPrice = priceProcessingService.getCurrentPrice();
         exchangeHistoryService.findLastOrder().ifPresent(item -> {
@@ -135,7 +134,7 @@ public class ExchangeServiceNew {
         return newPrice;
     }
 
-    @Scheduled(cron = "${exchange.cron.every-6-sec}")
+    //@Scheduled(cron = "${exchange.cron.every-6-sec}")
     public void checkStatusOrder() {
         exchangeHistoryService.findLastOrder().ifPresent(item -> {
             if (item.getOrderStatus() != OrderStatus.CANCELED && item.getOrderStatus() != OrderStatus.FILLED) {
