@@ -5,13 +5,15 @@ import lombok.Data;
 import javax.persistence.*;
 import java.time.LocalDateTime;
 
-@Table(name = "asset_balance")
+@Table(schema = "cr_schema", name = "asset_balance")
 @Entity
 @Data
 public class AssetBalanceEntity {
 
     @Id
-    @SequenceGenerator(name = "asset_balance_seq_id_GENERATOR", sequenceName = "asset_balance_seq_id",
+    @SequenceGenerator(schema = "cr_schema",
+            name = "asset_balance_seq_id_GENERATOR",
+            sequenceName = "asset_balance_seq_id",
             allocationSize = 1)
     @GeneratedValue(generator = "asset_balance_seq_id_GENERATOR", strategy = GenerationType.SEQUENCE)
     private Long id;

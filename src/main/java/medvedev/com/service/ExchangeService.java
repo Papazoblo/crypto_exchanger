@@ -45,6 +45,8 @@ public class ExchangeService {
     private final PriceHistoryService priceHistoryService;
 
 
+
+
     //@Scheduled(cron = "${exchange.cron.every-3-sec}")
     public void createBuyOrder() {
 

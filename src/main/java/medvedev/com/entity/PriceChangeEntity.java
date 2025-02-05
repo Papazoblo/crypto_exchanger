@@ -11,14 +11,18 @@ import static medvedev.com.enums.HavePriceChangeState.WITHOUT_CHANGES;
 import static medvedev.com.enums.PriceChangeState.DECREASED;
 import static medvedev.com.enums.PriceChangeState.INCREASED;
 
-@Table(name = "price_changes")
+@Table(schema = "cr_schema", name = "price_changes")
 @Entity
 @Data
 public class PriceChangeEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Short id;
+    @SequenceGenerator(schema = "cr_schema",
+            sequenceName = "price_changes_id_seq",
+            name = "price_changes_id_seq_GEN",
+            allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "price_changes_id_seq_GEN")
+    private Long id;
 
     @Column(name = "old")
     private String oldPrice;

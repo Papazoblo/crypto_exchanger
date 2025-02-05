@@ -13,13 +13,15 @@ import java.util.DoubleSummaryStatistics;
 import java.util.List;
 import java.util.stream.DoubleStream;
 
-@Table(name = "price_history_block")
+@Table(schema = "cr_schema", name = "price_history_block")
 @Entity
 @Data
 public class PriceHistoryBlockEntity {
 
     @Id
-    @SequenceGenerator(name = "PRICE_HISTORY_BLOCK_ID_GENERATOR", sequenceName = "price_history_block_id_seq",
+    @SequenceGenerator(schema = "cr_schema",
+            name = "PRICE_HISTORY_BLOCK_ID_GENERATOR",
+            sequenceName = "price_history_block_id_seq",
             allocationSize = 1)
     @GeneratedValue(generator = "PRICE_HISTORY_BLOCK_ID_GENERATOR", strategy = GenerationType.SEQUENCE)
     private Long id;

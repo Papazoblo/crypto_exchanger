@@ -11,13 +11,17 @@ import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-@Table(name = "exchange_history")
+@Table(schema = "cr_schema", name = "exchange_history")
 @Entity
 @Data
 public class ExchangeHistoryEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @SequenceGenerator(schema = "cr_schema",
+            sequenceName = "exchange_history_id_seq",
+            name = "exchange_history_id_seq_GEN",
+            allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "exchange_history_id_seq_GEN")
     private Long id;
 
     @Column(name = "order_id")

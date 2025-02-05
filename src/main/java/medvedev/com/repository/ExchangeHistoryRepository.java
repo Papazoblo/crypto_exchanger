@@ -16,7 +16,7 @@ import java.util.Optional;
 @Repository
 public interface ExchangeHistoryRepository extends JpaRepository<ExchangeHistoryEntity, Long> {
 
-    @Query(value = "select eh.* from exchange_history eh " +
+    @Query(value = "select eh.* from cr_schema.exchange_history eh " +
             "order by eh.id desc limit 1", nativeQuery = true)
     Optional<ExchangeHistoryEntity> findLastOrder();
 
@@ -49,7 +49,7 @@ public interface ExchangeHistoryRepository extends JpaRepository<ExchangeHistory
 
     @Transactional
     @Modifying
-    @Query(value = "UPDATE exchange_history SET id_prev_exchange = :idPrev WHERE " +
+    @Query(value = "UPDATE cr_schema.exchange_history SET id_prev_exchange = :idPrev WHERE " +
             " id_prev_exchange IS NULL " +
             "            AND type = 'BUY' " +
             "            AND order_status = 'FILLED' ", nativeQuery = true)

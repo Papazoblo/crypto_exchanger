@@ -3,9 +3,11 @@ package medvedev.com.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import medvedev.com.dto.PriceHistoryBlockDto;
+import medvedev.com.dto.event.CandleCloseEvent;
 import medvedev.com.entity.PriceHistoryBlockEntity;
 import medvedev.com.enums.PriceBlockStatus;
 import medvedev.com.repository.PriceHistoryBlockRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.util.Pair;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -26,6 +28,8 @@ public class PriceHistoryBlockService {
 
     private final PriceHistoryBlockRepository repository;
     private final NamedParameterJdbcTemplate jdbcTemplate;
+    private final ApplicationEventPublisher eventPublisher;
+
 
     //фиксирует курс блоками (мин, макс, средний)
     @Scheduled(cron = "${exchange.cron.fixed-price-block}")
@@ -48,6 +52,14 @@ public class PriceHistoryBlockService {
         return repository.findFirstByDateOpenLessThanAndStatusOrderByDateOpenDesc(curDateTime, PriceBlockStatus.OPEN);
     }
 
+    public Optional<PriceHistoryBlockEntity> getLastOpenedBlock() {
+        return repository.findFirstByStatusOrderByDateOpenDesc(PriceBlockStatus.OPEN);
+    }
+
+    public List<PriceHistoryBlockEntity> getLast3Block() {
+        return repository.getLast3ClosedBlocks();
+    }
+
     public void create() {
         PriceHistoryBlockEntity entity = new PriceHistoryBlockEntity();
         repository.save(entity);
@@ -64,6 +76,7 @@ public class PriceHistoryBlockService {
         repository.findFirstByStatusOrderByDateOpenDesc(PriceBlockStatus.CLOSE).ifPresent(block ->
                 entity.setAvg(block.getAvg().toString()));
         repository.save(entity);
+        eventPublisher.publishEvent(new CandleCloseEvent(entity.getId(), this));
     }
 
     public void refresh() {
@@ -83,11 +96,11 @@ public class PriceHistoryBlockService {
     public Pair<String, String> getOpenClosePrice(Long blockId) {
         return jdbcTemplate.queryForObject("select\n" +
                         "    (select price\n" +
-                        "    from price_history\n" +
-                        "    where date = (select min(date) from price_history where history_block_id = :blockId)) as openPrice,\n" +
+                        "    from cr_schema.price_history\n" +
+                        "    where date = (select min(date) from cr_schema.price_history where history_block_id = :blockId)) as openPrice,\n" +
                         "    (select price\n" +
-                        "     from price_history\n" +
-                        "     where date = (select max(date) from price_history where history_block_id = :blockId)) as closePrice;\n",
+                        "     from cr_schema.price_history\n" +
+                        "     where date = (select max(date) from cr_schema.price_history where history_block_id = :blockId)) as closePrice;\n",
                 Map.of("blockId", blockId),
                 (rs, num) -> Pair.of(rs.getString("openPrice"), rs.getString("closePrice")));
     }

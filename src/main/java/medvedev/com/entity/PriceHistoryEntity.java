@@ -8,7 +8,7 @@ import medvedev.com.wrapper.BigDecimalWrapper;
 import javax.persistence.*;
 import java.time.LocalDateTime;
 
-@Table(name = "price_history")
+@Table(schema = "cr_schema", name = "price_history")
 @Entity
 @Data
 public class PriceHistoryEntity {

@@ -5,7 +5,7 @@ import medvedev.com.enums.ChatState;
 
 import javax.persistence.*;
 
-@Table(name = "chat_id_state")
+@Table(schema = "cr_schema", name = "chat_id_state")
 @Entity
 @Data
 public class ChatStateEntity {

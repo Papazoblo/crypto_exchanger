@@ -31,6 +31,16 @@ public class BigDecimalWrapper extends BigDecimal {
         return compareTo(val) == LESS;
     }
 
+    @Override
+    public BigDecimalWrapper abs() {
+        return new BigDecimalWrapper(super.abs());
+    }
+
+    @Override
+    public BigDecimalWrapper subtract(BigDecimal subtrahend) {
+        return new BigDecimalWrapper(super.subtract(subtrahend));
+    }
+
     public BigDecimalWrapper setScale(int scale, RoundingMode roundingMode) {
         return new BigDecimalWrapper(super.setScale(scale, roundingMode));
     }

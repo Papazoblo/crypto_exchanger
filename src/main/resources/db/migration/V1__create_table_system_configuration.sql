@@ -1,10 +1,15 @@
-CREATE TABLE system_configuration
+create schema if not exists cr_schema;
+
+set schema 'cr_schema';
+set search_path to 'cr_schema';
+
+CREATE TABLE cr_schema.system_configuration
 (
     name  varchar(50) PRIMARY KEY NOT NULL,
     value varchar(30)             NOT NULL
 );
 
-INSERT INTO system_configuration(name, value)
+INSERT INTO cr_schema.system_configuration(name, value)
 VALUES ('SYSTEM_STATE', 'LAUNCHED'),
        ('MIN_DIFFERENCE_PRICE', '15'),
        ('CURRENT_PRICE', '3000'),

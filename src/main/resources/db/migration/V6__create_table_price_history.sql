@@ -1,7 +1,7 @@
-CREATE SEQUENCE IF NOT EXISTS price_history_block_id_seq;
-CREATE TABLE price_history_block
+CREATE SEQUENCE IF NOT EXISTS cr_schema.price_history_block_id_seq;
+CREATE TABLE cr_schema.price_history_block
 (
-    id              BIGINT      NOT NULL,
+    id              BIGINT      NOT NULL default nextval('cr_schema.price_history_block_id_seq'),
     date_open       TIMESTAMP   NOT NULL,
     date_close      TIMESTAMP,
     status          VARCHAR(20) NOT NULL,
@@ -14,7 +14,7 @@ CREATE TABLE price_history_block
     PRIMARY KEY (id)
 );
 
-CREATE TABLE price_history
+CREATE TABLE cr_schema.price_history
 (
     date             TIMESTAMP   NOT NULL,
     price            VARCHAR(20) NOT NULL,

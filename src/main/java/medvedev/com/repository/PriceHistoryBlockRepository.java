@@ -22,6 +22,16 @@ public interface PriceHistoryBlockRepository extends JpaRepository<PriceHistoryB
     Optional<PriceHistoryBlockEntity> findFirstByDateOpenLessThanAndStatusOrderByDateOpenDesc(LocalDateTime curDate,
                                                                                               PriceBlockStatus status);
 
+    @Query(value = "select *\n" +
+            "from cr_schema.price_history_block\n" +
+            "where id in (select id\n" +
+            "             from cr_schema.price_history_block\n" +
+            "             where status = 'CLOSE'\n" +
+            "             order by id desc\n" +
+            "             limit 3)\n" +
+            "order by id desc", nativeQuery = true)
+    List<PriceHistoryBlockEntity> getLast3ClosedBlocks();
+
     Optional<PriceHistoryBlockEntity> findFirstByStatusOrderByDateOpenDesc(PriceBlockStatus status);
 
     @Query("select pb from PriceHistoryBlockEntity pb " +
