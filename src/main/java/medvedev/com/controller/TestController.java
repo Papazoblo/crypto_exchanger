@@ -3,22 +3,14 @@ package medvedev.com.controller;
 import lombok.RequiredArgsConstructor;
 import medvedev.com.client.BinanceApiClient;
 import medvedev.com.dto.property.BinanceProperty;
-import medvedev.com.dto.response.BalanceInfoResponse;
-import medvedev.com.dto.response.OrderBookResponse;
 import medvedev.com.dto.response.OrderInfoResponse;
-import medvedev.com.enums.Currency;
+import medvedev.com.enums.BlockTimeType;
+import medvedev.com.service.CandleAnalyzerService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import static java.util.stream.Collectors.groupingBy;
-import static medvedev.com.dto.response.OrderBookResponse.PRICE_INDEX;
-import static medvedev.com.dto.response.OrderBookResponse.QUANTITY_INDEX;
 
 @RestController
 @RequiredArgsConstructor
@@ -26,6 +18,23 @@ public class TestController {
 
     private final BinanceApiClient binanceApiClient;
     private final BinanceProperty property;
+    private final CandleAnalyzerService candleAnalyzerService;
+
+    @GetMapping("/test/check-candle/{id}/{type}")
+    public void testStrategy(@PathVariable("id") Long id,
+                             @PathVariable("type") BlockTimeType timeType) {
+        candleAnalyzerService.test(id, timeType);
+    }
+
+    @GetMapping("/test/sell")
+    public void testSell() {
+        candleAnalyzerService.createSell();
+    }
+
+    @GetMapping("/test/message")
+    public void testMessage() {
+        candleAnalyzerService.createMessage();
+    }
 
     @GetMapping("/test/{val}")
     public Object test(@PathVariable("val") Integer pos) {

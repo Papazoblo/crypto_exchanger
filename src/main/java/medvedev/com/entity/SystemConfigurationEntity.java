@@ -7,7 +7,7 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-@Table(name = "system_configuration")
+@Table(schema = "cr_schema", name = "system_configuration")
 @Entity
 @Data
 public class SystemConfigurationEntity {

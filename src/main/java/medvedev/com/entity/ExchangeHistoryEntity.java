@@ -7,7 +7,19 @@ import medvedev.com.enums.OrderSide;
 import medvedev.com.enums.OrderStatus;
 import medvedev.com.wrapper.BigDecimalWrapper;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.PrePersist;
+import javax.persistence.PreUpdate;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -43,14 +55,14 @@ public class ExchangeHistoryEntity {
     @Column(name = "final_amount")
     private String finalAmount;
 
-    @Column(name = "min_price_exchange")
-    private String minPriceExchange;
-
-    @Column(name = "increment_step")
-    private Integer incrementStep;
+    @Column(name = "price_to_sell")
+    private String priceToSell;
 
     @Column(name = "price")
     private String price;
+
+    @Column(name = "stop_price")
+    private String stopPrice;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "order_status")
@@ -59,6 +71,9 @@ public class ExchangeHistoryEntity {
     @ManyToOne
     @JoinColumn(name = "id_prev_exchange")
     private ExchangeHistoryEntity prevExchange;
+
+    @Column(name = "history_price_block_id")
+    private Long historyPriceBlockId;
 
     @Column(name = "cancel_type")
     @Enumerated(EnumType.STRING)
@@ -78,9 +93,6 @@ public class ExchangeHistoryEntity {
         return Optional.ofNullable(initialAmount).map(BigDecimalWrapper::new).orElse(null);
     }
 
-    public BigDecimalWrapper getMinPriceExchange() {
-        return Optional.ofNullable(minPriceExchange).map(BigDecimalWrapper::new).orElse(null);
-    }
 
     public BigDecimalWrapper getPrice() {
         return Optional.ofNullable(price).map(BigDecimalWrapper::new).orElse(null);
@@ -96,13 +108,9 @@ public class ExchangeHistoryEntity {
         entity.setInitialAmount(order.getOrigQty());
         entity.setFinalAmount(order.getExecutedQty());
         entity.setPrice(order.getPrice());
-        if (entity.getMinPriceExchange() == null) {
-            entity.setMinPriceExchange(entity.getPrice().toString());
-        }
         entity.setOperationType(order.getSide());
         entity.setOrderId(order.getOrderId());
         entity.setOrderStatus(order.getStatus());
-        entity.setIncrementStep(0);
         return entity;
     }
 

@@ -1,17 +1,22 @@
 package medvedev.com.entity;
 
 import lombok.Data;
-import lombok.ToString;
+import medvedev.com.enums.BlockTimeType;
 import medvedev.com.enums.PriceBlockStatus;
 import medvedev.com.enums.PriceChangeState;
 import medvedev.com.wrapper.BigDecimalWrapper;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.PrePersist;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.DoubleSummaryStatistics;
-import java.util.List;
-import java.util.stream.DoubleStream;
 
 @Table(schema = "cr_schema", name = "price_history_block")
 @Entity
@@ -51,9 +56,9 @@ public class PriceHistoryBlockEntity {
     @Column(name = "close")
     private String close;
 
-    @OneToMany(mappedBy = "historyBlock", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude
-    private List<PriceHistoryEntity> historyList = new ArrayList<>();
+    @Column(name = "time_type")
+    @Enumerated(EnumType.STRING)
+    private BlockTimeType timeType;
 
     @Column(name = "avg_change_type")
     @Enumerated(EnumType.STRING)
@@ -80,18 +85,5 @@ public class PriceHistoryBlockEntity {
         min = "0.0";
         max = "0.0";
         avg = "0.0";
-    }
-
-    @PreUpdate
-    public void preUpdate() {
-        DoubleSummaryStatistics statistics = historyList.stream()
-                .flatMapToDouble(price -> DoubleStream.of(price.getPrice().doubleValue()))
-                .summaryStatistics();
-        min = Double.toString(statistics.getMin());
-        max = Double.toString(statistics.getMax());
-
-        avgChangeType = Double.parseDouble(avg) > statistics.getAverage() ?
-                PriceChangeState.DECREASED : PriceChangeState.INCREASED;
-        avg = Double.toString(statistics.getAverage());
     }
 }

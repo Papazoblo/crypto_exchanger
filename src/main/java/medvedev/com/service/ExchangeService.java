@@ -2,29 +2,34 @@ package medvedev.com.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import medvedev.com.client.BinanceApiClient;
 import medvedev.com.component.ExchangeProperties;
-import medvedev.com.component.TimestampComponent;
-import medvedev.com.dto.ExchangeHistoryDto;
-import medvedev.com.dto.property.BinanceProperty;
+import medvedev.com.dto.event.CreateBuyOrderEvent;
+import medvedev.com.dto.event.PriceChangeEvent;
 import medvedev.com.dto.response.BalanceInfoResponse;
-import medvedev.com.dto.response.OrderBookResponse;
 import medvedev.com.dto.response.OrderInfoResponse;
 import medvedev.com.entity.ExchangeHistoryEntity;
-import medvedev.com.enums.*;
+import medvedev.com.entity.PriceHistoryBlockEntity;
+import medvedev.com.enums.Currency;
+import medvedev.com.enums.ExchangeCancelType;
+import medvedev.com.enums.OrderSide;
+import static medvedev.com.enums.OrderSide.BUY;
+import static medvedev.com.enums.OrderSide.SELL;
+import medvedev.com.enums.OrderStatus;
+import static medvedev.com.enums.OrderStatus.*;
+import medvedev.com.enums.OrderType;
+import medvedev.com.enums.TimeInForce;
 import medvedev.com.service.telegram.TelegramPollingService;
 import medvedev.com.wrapper.BigDecimalWrapper;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Optional;
-
-import static medvedev.com.enums.OrderSide.BUY;
-import static medvedev.com.enums.OrderSide.SELL;
-import static medvedev.com.enums.OrderStatus.*;
 
 @Service
 @RequiredArgsConstructor
@@ -32,242 +37,162 @@ import static medvedev.com.enums.OrderStatus.*;
 public class ExchangeService {
 
     protected static final String EXCHANGE_MESSAGE_PATTERN = "*%s*\n_price_: %s\n" +
-            "_from_: %s\n_to_: %s";
+            "_from_: %s\n_to_: %s\n_price_to_sell_: %s";
+    private static final int MAX_ORDER_HOUR_SIZE = 3;
     public static final BigDecimal TEN_THOUSAND = new BigDecimal("10000");
     private final ExchangeProperties exchangeProperties;
     private final ExchangeHistoryService exchangeHistoryService;
     private final PriceProcessingService priceProcessingService;
-    private final BinanceApiClient binanceApiClient;
-    private final BinanceProperty binanceProperty;
-    private final TimestampComponent timestampComponent;
+    private final BinanceClientService binanceClientService;
     private final AssetBalanceService assetBalanceService;
     private final TelegramPollingService telegramPollingService;
-    private final PriceHistoryService priceHistoryService;
 
+    @EventListener
+    public void listenCreateBuyOrder(CreateBuyOrderEvent event) {
+        createBuyOrder(event.getLastBlock(), event.getPriceToBuy(), event.getPriceToSell());
+    }
 
+    public void createBuyOrder(PriceHistoryBlockEntity lastBlock,
+                               BigDecimalWrapper priceToBuy,
+                               String priceToSell) {
 
+        BigDecimalWrapper currentPrice = binanceClientService.getCurrentPrice();
+        if (isAvailableCreateBuyOrder(Optional.empty(), currentPrice)) {
 
-    //@Scheduled(cron = "${exchange.cron.every-3-sec}")
-    public void createBuyOrder() {
-
-        Optional<ExchangeHistoryEntity> lastOrder = exchangeHistoryService.findLastOrder();
-        BigDecimalWrapper currentPrice = priceProcessingService.getCurrentPrice();
-        if (isAvailableCreateBuyOrder(lastOrder, currentPrice)) {
-            if (priceHistoryService.isPriceDifferenceLong()) {
-                log.info("Price difference is LONG: {}", currentPrice);
-                return;
-            }
-            BigDecimalWrapper priceToBuy = priceProcessingService.getPriceToBuy();
-            currentPrice = priceProcessingService.getCurrentPrice();
             if (currentPrice.isLessThen(priceToBuy)) {
                 priceToBuy = currentPrice;
             }
 
             String quantity = getQuantityToBuy(priceToBuy);
             log.info("I am making a purchase\nprice: {}\ncurrentPrice: {}\nquantity: {}\n", priceToBuy, currentPrice, quantity);
-
-            if (lastOrder.isPresent() && lastOrder.get().getOperationType() == BUY) {
-                ExchangeHistoryEntity lastExchange = lastOrder.get();
-                lastExchange.setOrderStatus(NEW);
-                OrderInfoResponse createOrderResponse = binanceApiClient.newOrder(binanceProperty.getSymbol(),
-                        BUY,
-                        OrderType.LIMIT,
-                        TimeInForce.GTC,
-                        quantity,
-                        priceToBuy.toString(),
-                        timestampComponent.getTimestamp(),
-                        binanceProperty.getRectWindow());
-                lastExchange.setOrderId(createOrderResponse.getOrderId());
-                exchangeHistoryService.save(lastExchange);
-            } else {
-                createOrder(null, quantity,
-                        priceToBuy.toString(),
-                        OrderSide.BUY);
-            }
-        }
-    }
-
-    //@Scheduled(cron = "${exchange.cron.every-6-sec}")
-    public void createSellOrder() {
-
-        Optional<ExchangeHistoryEntity> lastOrder = exchangeHistoryService.findLastOrder();
-        BigDecimalWrapper currentPrice = priceProcessingService.getCurrentPrice();
-        if (isAvailableCreateSellOrder(lastOrder)) {
-            createSellOrder(lastOrder.orElse(null), currentPrice);
+            createOrder(null, quantity,
+                    priceToBuy.toString(),
+                    OrderSide.BUY,
+                    lastBlock,
+                    priceToSell);
         }
     }
 
     /**
-     * если покупка, то отмена по курсу
-     * если продажа, то отмена по времени
+     * Проверка стоп цены SELL ордера
+     *
+     * @param changeEvent
      */
-    //@Scheduled(cron = "${exchange.cron.every-3-sec}")
-    public void cancelOrderToPriceCorrecting() {
-        BigDecimal currentPrice = priceProcessingService.getCurrentPrice();
-        exchangeHistoryService.findLastOrder().ifPresent(item -> {
-            if (item.getOrderStatus() == NEW) {
-                if (item.getOperationType() == BUY) {
-                    if (item.getUpdateDate().isBefore(LocalDateTime.now().minusSeconds(exchangeProperties.getTimeLongToBackChangePrice()))) {
-                        cancelOrder(currentPrice, item, ExchangeCancelType.BY_LACK_OF_EXCHANGE);
-                    } else if (item.getOperationType() == BUY && item.getUpdateDate().isBefore(LocalDateTime.now().minusSeconds(exchangeProperties.getTimeLiveBuyExchange()))) {
-                        if (new BigDecimalWrapper(item.getPrice()).isGreaterThen(currentPrice.subtract(BigDecimal.valueOf(exchangeProperties.getDoublePriceDifference())))) {
-                            cancelOrder(currentPrice, item, ExchangeCancelType.BY_PRICE_ADJUSTMENT);
-                        }
-                    }
-                } else {
-                    log.info("Is {} > {}", LocalDateTime.now().minusMinutes(exchangeProperties.getMinutesCountLiveSellOrder()), item.getUpdateDate());
-                    if (LocalDateTime.now().minusMinutes(exchangeProperties.getMinutesCountLiveSellOrder()).isAfter(item.getUpdateDate())) {
-                        cancelOrder(item, ExchangeCancelType.BY_PRICE_ADJUSTMENT);
-                    }
-                }
+    @EventListener
+    public void checkStopPrice(PriceChangeEvent changeEvent) {
+        exchangeHistoryService.findFirst(BUY, NEW).ifPresent(sellExchange -> {
+            if (BigDecimalWrapper.of(sellExchange.getStopPrice()).isGreaterThen(changeEvent.getPrice())) {
+                cancelOrder(sellExchange, ExchangeCancelType.BY_BROKE_STOP_PRICE); //todo
             }
         });
-        priceHistoryService.savePrice(new BigDecimalWrapper(currentPrice));
     }
 
-    private BigDecimalWrapper getNewPrice(BigDecimal currentPrice, ExchangeHistoryEntity item) {
-        BigDecimalWrapper newPrice;
-        if (item.getOperationType() == SELL) {
-            ExchangeHistoryDto lastBuyExchange = exchangeHistoryService.findLastBuyFilledExchange();
-            newPrice = priceProcessingService.getPriceToSell(currentPrice, lastBuyExchange, Optional.of(item));
-        } else {
-            newPrice = priceProcessingService.getPriceToBuy(Optional.of(item)).setScale(2, RoundingMode.HALF_UP);
-        }
-        return newPrice;
-    }
-
-    //@Scheduled(cron = "${exchange.cron.every-6-sec}")
+    @Scheduled(cron = "${exchange.cron.every-20-sec}")
     public void checkStatusOrder() {
-        exchangeHistoryService.findLastOrder().ifPresent(item -> {
-            if (item.getOrderStatus() != OrderStatus.CANCELED && item.getOrderStatus() != OrderStatus.FILLED) {
-                OrderInfoResponse orderInfoResponse = binanceApiClient.getOrderInfo(binanceProperty.getSymbol(),
-                        item.getOrderId(),
-                        timestampComponent.getTimestamp(),
-                        binanceProperty.getRectWindow());
-                item.setOrderStatus(orderInfoResponse.getStatus());
-                item.setFinalAmount(new BigDecimalWrapper(orderInfoResponse.getExecutedQty()).toString());
-                item.setPrice(orderInfoResponse.getPrice());
-                if (item.getOrderStatus() == CANCELED && item.getCancelType() == null) {
-                    item.setCancelType(ExchangeCancelType.FROM_SERVICE);
+        BigDecimalWrapper currentPrice = binanceClientService.getCurrentPrice();
+        exchangeHistoryService.findAllByStatus(Arrays.asList(NEW, PARTIALLY_FILLED)).forEach(item -> {
+            OrderInfoResponse orderInfoResponse = binanceClientService.getOrderInfo(item.getOrderId());
+            item.setOrderStatus(orderInfoResponse.getStatus());
+            item.setFinalAmount(new BigDecimalWrapper(orderInfoResponse.getExecutedQty()).toString());
+            item.setPrice(orderInfoResponse.getPrice());
+            log.debug("Check status order: {}", orderInfoResponse);
+            item = exchangeHistoryService.save(item);
+
+            if (item.getOrderStatus() == CANCELED && item.getOperationType() == SELL) {
+                if (item.getCancelType() == ExchangeCancelType.BY_BROKE_STOP_PRICE
+                        || item.getCancelType() == ExchangeCancelType.BY_LACK_OF_EXCHANGE) {
+                    createSellOrder(item.getPrevExchange(), currentPrice);
                 }
-                log.debug("Check status launched: {}", orderInfoResponse);
-                exchangeHistoryService.save(item);
+            } else if (item.getOrderStatus() == FILLED) {
 
-                if (item.getOrderStatus() == FILLED) {
-                    try {
-                        telegramPollingService.sendMessage(String.format(EXCHANGE_MESSAGE_PATTERN, item.getOperationType().name(),
-                                item.getPrice(),
-                                item.getInitialAmount(),
-                                item.getInitialAmount().multiply(item.getPrice()).setScale(4, RoundingMode.HALF_EVEN)));
-                    } catch (Exception ex) {
-                        log.debug("Error send TG message: {}", ex.getMessage());
-                    }
+                try {
+                    telegramPollingService.sendMessage(String.format(EXCHANGE_MESSAGE_PATTERN, item.getOperationType().name(),
+                            item.getPrice(),
+                            item.getInitialAmount(),
+                            item.getInitialAmount().multiply(item.getPrice()).setScale(4, RoundingMode.HALF_EVEN),
+                            item.getPriceToSell()));
+                } catch (Exception ex) {
+                    log.debug("Error send TG message: {}", ex.getMessage());
+                }
 
-                    if (item.getOperationType() == SELL) {
-                        assetBalanceService.create();
-                    }
+                if (item.getOperationType() == BUY) {//если ордер на покупку исполнился
+                    //createSellOrder(item, null); перенесено в крон
+                } else {
+                    assetBalanceService.create();
+                }
+            } else {
+                if (item.getOperationType() == BUY) {
+
+                } else {
+//                    if (new BigDecimalWrapper(item.getStopPrice()).isGreaterThen(currentPrice)) {// если текущий курс меньше стоп прайса
+//                        cancelOrder(item, ExchangeCancelType.BY_BROKE_STOP_PRICE);
+//                    } else if (item.getCreateDate().isBefore(LocalDateTime.now().minusHours(MAX_ORDER_HOUR_SIZE))) {//если ордер не исполнился за ${MAX_ORDER_HOUR_SIZE} часов
+//                        cancelOrder(item, ExchangeCancelType.BY_LACK_OF_EXCHANGE);
+//                    }
                 }
             }
         });
-    }
-
-    private void cancelOrder(BigDecimal currentPrice, ExchangeHistoryEntity exchange, ExchangeCancelType cancelType) {
-        try {
-            exchange.setCancelType(cancelType);
-            BigDecimalWrapper newPrice = getNewPrice(currentPrice, exchange);
-            if (newPrice.compareTo(exchange.getPrice().setScale(2, RoundingMode.HALF_UP)) == 0) {
-                return;
-            }
-            cancelOrder(exchange, cancelType);
-        } catch (Exception ex) {
-            log.info("Error cancelling order: {}", ex.getMessage());
-            checkStatusOrder();
-        }
     }
 
     private void cancelOrder(ExchangeHistoryEntity exchange, ExchangeCancelType cancelType) {
         log.info("Canceling order [id = {}, orderId = {}]", exchange.getId(), exchange.getOrderId());
-        binanceApiClient.cancelOrder(binanceProperty.getSymbol(),
-                exchange.getOrderId(),
-                timestampComponent.getTimestamp(),
-                binanceProperty.getRectWindow());
+        binanceClientService.cancelOrder(exchange.getOrderId());
         exchange.setCancelType(cancelType);
         exchangeHistoryService.save(exchange);
     }
 
-    private void createSellOrder(ExchangeHistoryEntity lastExchange, BigDecimalWrapper currentPrice) {
-        if (lastExchange == null) {
+    @Scheduled(cron = "${exchange.cron.every-1-min}")
+    public void createSellByCron() {
+        exchangeHistoryService.findLast().ifPresent(item -> createSellOrder(item, null));
+    }
+
+    public void createSellOrder(ExchangeHistoryEntity buyOrder, BigDecimalWrapper sellPrice) {
+
+        if (buyOrder == null || buyOrder.getOperationType() == SELL) {
             return;
         }
 
-        if (lastExchange.getOperationType() == BUY) {
+        if (isAvailableCreateSellOrder(Optional.of(buyOrder))) {
 
-            String quantity = new BigDecimal(binanceApiClient.getBalanceInfo(Currency.ETH.name(),
-                    timestampComponent.getTimestamp(),
-                    binanceProperty.getRectWindow()).get(0).getFree()).multiply(BigDecimal.valueOf(0.9998)).setScale(4, RoundingMode.DOWN).toString();
+            String quantity = new BigDecimal(binanceClientService.getBalance(Currency.ETH).getFree())
+                    .multiply(BigDecimal.valueOf(0.9998)).setScale(4, RoundingMode.DOWN).toString();
 
-            BigDecimalWrapper priceToSell = priceProcessingService.getMinPriceToSell(lastExchange.getPrice(), lastExchange.getInitialAmount());
-            if (priceToSell.isLessThenOrEqual(currentPrice)) {
-                priceToSell = currentPrice;
-            }
-            log.info("I am making a sale\nprice: {}\ncurrentPrice: {}\nquantity: {}\n", priceToSell, currentPrice, quantity);
-            createOrder(lastExchange, quantity,
+            BigDecimalWrapper priceToSell = Optional.ofNullable(sellPrice).orElse(BigDecimalWrapper.of(buyOrder.getPriceToSell()));
+            log.info("I am making a sale\nprice: {}\nquantity: {}\n", priceToSell, quantity);
+            createOrder(buyOrder, quantity,
                     priceToSell.toString(),
-                    SELL);
-        } else {
-            /**
-             -если step = 50, то сбарсываем на 0
-             -если курс < минимального обмена, то минимальный для обмена
-             -если курс > минимального, то текущий курс
-             -если step < 50, то инекрементим
-             */
-            lastExchange.setOrderStatus(NEW);
-            if (lastExchange.getIncrementStep() < 75) {
-                lastExchange.setIncrementStep(lastExchange.getIncrementStep() + 1);
-                if (currentPrice.isLessThen(lastExchange.getMinPriceExchange())) {
-                    lastExchange.setPrice(new BigDecimalWrapper(lastExchange.getMinPriceExchange().add(BigDecimal.valueOf(exchangeProperties.getSellPriceIncrement()).multiply(new BigDecimal(lastExchange.getIncrementStep())))).setScale(2, RoundingMode.HALF_DOWN).toString());
-                } else {
-                    lastExchange.setPrice(new BigDecimalWrapper(currentPrice.add(BigDecimal.valueOf(exchangeProperties.getSellPriceIncrement()).multiply(new BigDecimal(lastExchange.getIncrementStep())))).setScale(2, RoundingMode.HALF_DOWN).toString());
-                }
-            } else {
-                lastExchange.setIncrementStep(1);
-                if (currentPrice.isLessThen(lastExchange.getMinPriceExchange())) {
-                    lastExchange.setPrice(new BigDecimalWrapper(lastExchange.getMinPriceExchange().add(BigDecimal.valueOf(exchangeProperties.getSellPriceIncrement()).multiply(new BigDecimal(lastExchange.getIncrementStep())))).setScale(2, RoundingMode.HALF_DOWN).toString());
-                } else {
-                    lastExchange.setPrice(new BigDecimalWrapper(currentPrice.add(BigDecimal.valueOf(exchangeProperties.getSellPriceIncrement()).multiply(new BigDecimal(lastExchange.getIncrementStep())))).setScale(2, RoundingMode.HALF_DOWN).toString());
-                }
-            }
-            OrderInfoResponse createOrderResponse = binanceApiClient.newOrder(binanceProperty.getSymbol(),
                     SELL,
-                    OrderType.LIMIT,
-                    TimeInForce.GTC,
-                    lastExchange.getInitialAmount().toString(),
-                    lastExchange.getPrice().toString(),
-                    timestampComponent.getTimestamp(),
-                    binanceProperty.getRectWindow());
-            lastExchange.setOrderId(createOrderResponse.getOrderId());
-            exchangeHistoryService.save(lastExchange);
-
-            log.info("I am making a sale\nprice: {}\ncurrentPrice: {}\nquantity: {}\n", createOrderResponse.getPrice(), currentPrice, lastExchange.getInitialAmount());
+                    null,
+                    null);
         }
     }
 
-    private void createOrder(ExchangeHistoryEntity lastExchange, String quantity, String price, OrderSide orderSide) {
-        OrderInfoResponse createOrderResponse = binanceApiClient.newOrder(binanceProperty.getSymbol(),
-                orderSide,
+    private void createOrder(ExchangeHistoryEntity lastExchange,
+                             String quantity,
+                             String price,
+                             OrderSide orderSide,
+                             PriceHistoryBlockEntity priceHistoryBlock,
+                             String priceToSell) {
+
+        if (new BigDecimalWrapper(quantity).isEqual(new BigDecimal(0))) {
+            log.debug("Failed create order. Quantity is incorrect [{}]", quantity);
+            return;
+        }
+
+        OrderInfoResponse createOrderResponse = binanceClientService.createOrder(orderSide,
                 OrderType.LIMIT,
                 TimeInForce.GTC,
                 quantity,
-                price,
-                timestampComponent.getTimestamp(),
-                binanceProperty.getRectWindow());
-        exchangeHistoryService.saveIfNotExist(lastExchange, createOrderResponse);
+                price);
+
+        exchangeHistoryService.saveIfNotExist(lastExchange,
+                createOrderResponse,
+                priceHistoryBlock,
+                priceToSell);
     }
 
     private String getQuantityToBuy(BigDecimalWrapper priceToBuy) {
-        BalanceInfoResponse balance = binanceApiClient.getBalanceInfo(Currency.USDT.name(),
-                timestampComponent.getTimestamp(),
-                binanceProperty.getRectWindow()).get(0);
+        BalanceInfoResponse balance = binanceClientService.getBalance(Currency.USDT);
 
         return new BigDecimal(balance.getFree())
                 .multiply(TEN_THOUSAND)
@@ -278,31 +203,8 @@ public class ExchangeService {
                 .round(new MathContext(4)).toString();
     }
 
-    private String getQuantityToSell() {
-        BalanceInfoResponse balance = binanceApiClient.getBalanceInfo(Currency.ETH.name(),
-                timestampComponent.getTimestamp(),
-                binanceProperty.getRectWindow()).get(0);
-        return new BigDecimal(balance.getFree())
-                .multiply(TEN_THOUSAND)
-                .multiply(new BigDecimal("0.999"))
-                .divide(TEN_THOUSAND, 4, RoundingMode.FLOOR)
-                .round(new MathContext(4)).toString();
-    }
-
     private boolean isAvailableCreateBuyOrder(Optional<ExchangeHistoryEntity> lastOrder, BigDecimalWrapper curPrice) {
 
-        OrderBookResponse response = binanceApiClient.getOrderBook(binanceProperty.getSymbol(), 150);
-        double sumBuy = response.getBids().stream()
-                .mapToDouble(item -> Double.parseDouble(item[OrderBookResponse.QUANTITY_INDEX]))
-                .sum();
-        double sumSell = response.getAsks().stream()
-                .mapToDouble(item -> Double.parseDouble(item[OrderBookResponse.QUANTITY_INDEX]))
-                .sum();
-        log.info("Price: {}\n Buy: {}\n Sell: {}\n Diff: {}\n Coeff: {}\n\n", curPrice, sumBuy, sumSell, sumBuy - sumSell, sumBuy / sumSell);
-
-        if (sumBuy / sumSell < 2.45) {
-            return false;
-        }
 
         if (lastOrder.isPresent()) {
             ExchangeHistoryEntity lastExchange = lastOrder.get();
@@ -318,10 +220,8 @@ public class ExchangeService {
     private boolean isAvailableCreateSellOrder(Optional<ExchangeHistoryEntity> lastOrder) {
         if (lastOrder.isPresent()) {
             ExchangeHistoryEntity lastExchange = lastOrder.get();
-            return ((lastExchange.getOperationType() == SELL
-                    && lastExchange.getOrderStatus() == OrderStatus.CANCELED)
-                    || (lastExchange.getOperationType() == OrderSide.BUY && lastExchange.getOrderStatus() == OrderStatus.FILLED))
-                    && lastExchange.getUpdateDate().isBefore(LocalDateTime.now().minusSeconds(90));
+            return ((lastExchange.getOperationType() == SELL && lastExchange.getOrderStatus() == OrderStatus.CANCELED)
+                    || (lastExchange.getOperationType() == OrderSide.BUY && lastExchange.getOrderStatus() == OrderStatus.FILLED));
         }
         return false;
     }

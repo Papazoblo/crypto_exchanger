@@ -1,11 +1,15 @@
 package medvedev.com.entity;
 
 import lombok.Data;
-import lombok.ToString;
 import medvedev.com.enums.PriceChangeState;
 import medvedev.com.wrapper.BigDecimalWrapper;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.Id;
+import javax.persistence.Table;
 import java.time.LocalDateTime;
 
 @Table(schema = "cr_schema", name = "price_history")
@@ -23,11 +27,6 @@ public class PriceHistoryEntity {
     @Column(name = "change_state")
     @Enumerated(EnumType.STRING)
     private PriceChangeState changeState;
-
-    @ManyToOne
-    @JoinColumn(name = "history_block_id")
-    @ToString.Exclude
-    private PriceHistoryBlockEntity historyBlock;
 
     public BigDecimalWrapper getPrice() {
         return new BigDecimalWrapper(price);

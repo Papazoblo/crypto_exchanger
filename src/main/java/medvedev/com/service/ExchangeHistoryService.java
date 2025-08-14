@@ -2,24 +2,18 @@ package medvedev.com.service;
 
 
 import lombok.RequiredArgsConstructor;
-import medvedev.com.dto.ExchangeHistoryDto;
 import medvedev.com.dto.response.OrderInfoResponse;
 import medvedev.com.entity.ExchangeHistoryEntity;
+import medvedev.com.entity.PriceHistoryBlockEntity;
 import medvedev.com.enums.OrderSide;
 import medvedev.com.enums.OrderStatus;
-import medvedev.com.exception.EntityNotFoundException;
 import medvedev.com.repository.ExchangeHistoryRepository;
+import medvedev.com.wrapper.BigDecimalWrapper;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
-import java.util.Arrays;
-import java.util.Collections;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
-
-import static medvedev.com.enums.OrderStatus.NEW;
-import static medvedev.com.enums.OrderStatus.PARTIALLY_FILLED;
 
 @Service
 @RequiredArgsConstructor
@@ -27,86 +21,35 @@ public class ExchangeHistoryService {
 
     private final ExchangeHistoryRepository exchangeHistoryRepository;
 
-    public Optional<ExchangeHistoryEntity> findLastOrder() {
-        return exchangeHistoryRepository.findLastOrder();
+    public ExchangeHistoryEntity save(ExchangeHistoryEntity entity) {
+        return exchangeHistoryRepository.save(entity);
     }
 
-    public ExchangeHistoryDto save(ExchangeHistoryEntity entity) {
-        return ExchangeHistoryDto.from(exchangeHistoryRepository.save(entity));
+    public List<ExchangeHistoryEntity> findAllByStatus(List<OrderStatus> statusList) {
+        return exchangeHistoryRepository.findAllByOrderStatusIn(statusList);
     }
 
-    public void saveIfNotExist(ExchangeHistoryEntity lastExchange, OrderInfoResponse order) {
+    public void saveIfNotExist(ExchangeHistoryEntity lastExchange,
+                               OrderInfoResponse order,
+                               PriceHistoryBlockEntity block,
+                               String priceToSell) {
         if (!exchangeHistoryRepository.existsByOrderId(order.getOrderId())) {
             ExchangeHistoryEntity newExchangeItem = ExchangeHistoryEntity.from(order);
-            if (lastExchange != null && lastExchange.getOperationType() == OrderSide.SELL && newExchangeItem.getOperationType() == OrderSide.BUY) {
-                exchangeHistoryRepository.save(newExchangeItem);
-            } else {
-                newExchangeItem.setPrevExchange(lastExchange);
-                exchangeHistoryRepository.save(newExchangeItem);
+            newExchangeItem.setPriceToSell(priceToSell);
+            if (order.getSide() == OrderSide.BUY) {
+                newExchangeItem.setHistoryPriceBlockId(block.getId());
+                newExchangeItem.setStopPrice((newExchangeItem.getPrice().multiply(BigDecimalWrapper.valueOf(0.997)).setScale(2, RoundingMode.HALF_UP).toString()));
             }
+            newExchangeItem.setPrevExchange(lastExchange);
+            exchangeHistoryRepository.save(newExchangeItem);
         }
     }
 
-    public void closingOpenedExchangeById(Long id) {
-        exchangeHistoryRepository.closingOpenedExchangeById(id);
+    public Optional<ExchangeHistoryEntity> findFirst(OrderSide side, OrderStatus status) {
+        return exchangeHistoryRepository.findFirstByOperationTypeAndOrderStatusOrderByCreateDateDesc(side, status);
     }
 
-    public ExchangeHistoryDto getNewExchange() {
-        return exchangeHistoryRepository.findFirstByOrderStatusIn(Arrays.asList(NEW, PARTIALLY_FILLED))
-                .map(ExchangeHistoryDto::from)
-                .orElseThrow(() -> new EntityNotFoundException("New exchange history"));
-    }
-
-    /**
-     * Получение обменов ФИАТ => КРИПТА, в статусе ВЫПОЛНЕН, без
-     * проставленного idPrev (т.е. цикл обмена не завершился)
-     */
-    public List<ExchangeHistoryDto> getAllOpenExchange() {
-        List<ExchangeHistoryEntity> openedBuyExchange = exchangeHistoryRepository.findOpenedBuyExchange(
-                OrderSide.BUY, OrderStatus.FILLED);
-        if (!openedBuyExchange.isEmpty()) {
-            return toDto(Collections.singletonList(openedBuyExchange.get(0)));
-        }
-        return Collections.emptyList();
-    }
-
-    /**
-     * Из списка незавершенных обменов выбираем те, у которых
-     * курс обмена МЕНЬШЕ ТЕКУЩЕГО курса
-     */
-    public List<ExchangeHistoryDto> getOpenProfitableExchange(BigDecimal lastPrice) {
-        return getAllOpenExchange().stream()
-                .filter(record -> record.getPrice().isLessThen(lastPrice))
-                .collect(Collectors.toList());
-    }
-
-    public boolean isExistExchangeSell() {
-        return exchangeHistoryRepository.existsByOperationTypeAndOrderStatus(OrderSide.SELL, OrderStatus.FILLED);
-    }
-
-    public Optional<ExchangeHistoryDto> getLastExchange() {
-
-        return exchangeHistoryRepository.findTopByOrderStatusOrderByIdDesc(OrderStatus.FILLED)
-                .map(ExchangeHistoryDto::from);
-    }
-
-    public ExchangeHistoryDto findLastSellExchange() {
-        return exchangeHistoryRepository.findFirstByOperationTypeAndOrderStatusOrderByCreateDateDesc(OrderSide.SELL,
-                        OrderStatus.FILLED)
-                .map(ExchangeHistoryDto::from)
-                .orElseThrow(() -> new EntityNotFoundException("Sell exchange not found"));
-    }
-
-    public ExchangeHistoryDto findLastBuyFilledExchange() {
-        return exchangeHistoryRepository.findFirstByOperationTypeAndOrderStatusOrderByCreateDateDesc(OrderSide.BUY,
-                        OrderStatus.FILLED)
-                .map(ExchangeHistoryDto::from)
-                .orElseThrow(() -> new EntityNotFoundException("Buy exchange not found"));
-    }
-
-    private static List<ExchangeHistoryDto> toDto(List<ExchangeHistoryEntity> entities) {
-        return entities.stream()
-                .map(ExchangeHistoryDto::from)
-                .collect(Collectors.toList());
+    public Optional<ExchangeHistoryEntity> findLast() {
+        return exchangeHistoryRepository.findLastOrder();
     }
 }

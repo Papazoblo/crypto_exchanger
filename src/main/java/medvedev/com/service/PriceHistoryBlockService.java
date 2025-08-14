@@ -2,22 +2,25 @@ package medvedev.com.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import medvedev.com.dto.PriceHistoryBlockDto;
 import medvedev.com.dto.event.CandleCloseEvent;
+import medvedev.com.dto.event.CreateBuyOrderEvent;
 import medvedev.com.entity.PriceHistoryBlockEntity;
+import medvedev.com.enums.BlockTimeType;
 import medvedev.com.enums.PriceBlockStatus;
 import medvedev.com.repository.PriceHistoryBlockRepository;
+import medvedev.com.wrapper.BigDecimalWrapper;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.util.Pair;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +29,7 @@ public class PriceHistoryBlockService {
 
     private static final int HISTORY_LIST_SIZE = 10;
 
+    private final BinanceClientService binanceClientService;
     private final PriceHistoryBlockRepository repository;
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final ApplicationEventPublisher eventPublisher;
@@ -35,73 +39,89 @@ public class PriceHistoryBlockService {
     @Scheduled(cron = "${exchange.cron.fixed-price-block}")
     public void createPriceHistoryBlockScheduler() {
         LocalDateTime curDate = LocalDateTime.now();
-        getLastBlock(curDate).ifPresent(block -> close(block, curDate));
-        create();
-
-//        List<PriceHistoryBlockDto> blockList = getLastBlockList();
-//        if (blockList.size() < HISTORY_LIST_SIZE) {
-//            log.info("Price history array is empty");
-//        } else {
-//            exchangerInitializerService.initializeExchangeProcess(blockList);
-//        }
-
-        repository.deleteAll(repository.findIdsByOpenDate(LocalDateTime.now().minusMonths(6)));
+        Arrays.stream(BlockTimeType.values())
+                .filter(blockTimeType -> !blockTimeType.isExclude())
+                .forEach(blockTimeType -> {
+                    getLastBlock(curDate, blockTimeType).ifPresentOrElse(block -> {
+                        //закрываем и открываем новый
+                        if (block.getDateOpen().isBefore(curDate.minusMinutes(blockTimeType.getMinutes()).plusSeconds(30))) {
+                            close(block, curDate);
+                            create(blockTimeType);
+                        } else { //обновляем
+                            refresh(block);
+                        }
+                    }, () -> {
+                        create(blockTimeType);//открываем
+                    });
+                    repository.deleteAll(repository.findIdsByOpenDate(LocalDateTime.now().minusDays(7)));
+                });
     }
 
-    public Optional<PriceHistoryBlockEntity> getLastBlock(LocalDateTime curDateTime) {
-        return repository.findFirstByDateOpenLessThanAndStatusOrderByDateOpenDesc(curDateTime, PriceBlockStatus.OPEN);
+    public Optional<PriceHistoryBlockEntity> getLastBlock(LocalDateTime curDateTime, BlockTimeType blockTimeType) {
+        return repository.findFirstByDateOpenLessThanAndStatusAndTimeTypeOrderByDateOpenDesc(curDateTime, PriceBlockStatus.OPEN, blockTimeType);
     }
 
-    public Optional<PriceHistoryBlockEntity> getLastOpenedBlock() {
-        return repository.findFirstByStatusOrderByDateOpenDesc(PriceBlockStatus.OPEN);
+    public List<PriceHistoryBlockEntity> getLastLimitBlock(BlockTimeType timeType, int limit) {
+        return repository.getLastLimitClosedBlocks(timeType.name(), limit);
     }
 
-    public List<PriceHistoryBlockEntity> getLast3Block() {
-        return repository.getLast3ClosedBlocks();
+    public List<PriceHistoryBlockEntity> getLastLimitBlock(Long id, BlockTimeType timeType, int limit) {
+        return repository.getLastLimitClosedBlocks(timeType.name(), limit, id);
     }
 
-    public void create() {
+    public void create(BlockTimeType blockTimeType) {
         PriceHistoryBlockEntity entity = new PriceHistoryBlockEntity();
+        entity.setTimeType(blockTimeType);
+        refresh(entity);
         repository.save(entity);
     }
 
     public void close(PriceHistoryBlockEntity entity, LocalDateTime curDate) {
 
-        Pair<String, String> openClosePriceByBlock = getOpenClosePrice(entity.getId());
-
-        entity.setOpen(openClosePriceByBlock.getFirst());
-        entity.setClose(openClosePriceByBlock.getSecond());
         entity.setDateClose(curDate);
         entity.setStatus(PriceBlockStatus.CLOSE);
-        repository.findFirstByStatusOrderByDateOpenDesc(PriceBlockStatus.CLOSE).ifPresent(block ->
-                entity.setAvg(block.getAvg().toString()));
+        entity = refreshInfo(entity);
+//        repository.findFirstByStatusOrderByDateOpenDesc(PriceBlockStatus.CLOSE).ifPresent(block ->
+//                entity.setAvg(block.getAvg().toString()));
         repository.save(entity);
-        eventPublisher.publishEvent(new CandleCloseEvent(entity.getId(), this));
+        eventPublisher.publishEvent(new CandleCloseEvent(entity.getTimeType(), this));
     }
 
-    public void refresh() {
-        List<PriceHistoryBlockEntity> blocks = repository.findAllByStatus(PriceBlockStatus.OPEN);
-        blocks.forEach(block -> block.setDateClose(LocalDateTime.now()));
-        repository.saveAll(blocks);
+    public void refresh(PriceHistoryBlockEntity block) {
+        block = refreshInfo(block);
+        block = repository.save(block);
+
+        BigDecimalWrapper currentPrice = binanceClientService.getCurrentPrice();
+        if (currentPrice.doubleValue() < BigDecimalWrapper.of(block.getOpen()).doubleValue() * 0.92) {
+
+            log.debug("Big difference price: {}", block);
+            eventPublisher.publishEvent(new CreateBuyOrderEvent(this,
+                    block,
+                    currentPrice,
+                    currentPrice.multiply(BigDecimalWrapper.valueOf(1.02)).setScale(2, RoundingMode.HALF_UP).toString()));
+        }
     }
 
-    private List<PriceHistoryBlockDto> getLastBlockList() {
-        return repository.findAllByDateCloseGreaterThanAndStatusOrderByDateOpenDesc(
-                        LocalDateTime.now().minusDays(1L), PriceBlockStatus.CLOSE).stream()
-                .limit(PriceHistoryBlockService.HISTORY_LIST_SIZE)
-                .map(PriceHistoryBlockDto::of)
-                .collect(Collectors.toList());
-    }
+    public PriceHistoryBlockEntity refreshInfo(PriceHistoryBlockEntity block) {
 
-    public Pair<String, String> getOpenClosePrice(Long blockId) {
-        return jdbcTemplate.queryForObject("select\n" +
-                        "    (select price\n" +
-                        "    from cr_schema.price_history\n" +
-                        "    where date = (select min(date) from cr_schema.price_history where history_block_id = :blockId)) as openPrice,\n" +
-                        "    (select price\n" +
-                        "     from cr_schema.price_history\n" +
-                        "     where date = (select max(date) from cr_schema.price_history where history_block_id = :blockId)) as closePrice;\n",
-                Map.of("blockId", blockId),
-                (rs, num) -> Pair.of(rs.getString("openPrice"), rs.getString("closePrice")));
+        Map<String, Object> parameterMap = new HashMap<>();
+        parameterMap.put("dateFrom", block.getDateOpen());
+
+        jdbcTemplate.query("select avg(ph.price::decimal) as avg,\n" +
+                "       max(ph.price::decimal) as max,\n" +
+                "       min(ph.price::decimal) as min,\n" +
+                "       (select (ph1.price::decimal)  from cr_schema.price_history ph1 where ph1.date > :dateFrom order by ph1.date limit 1) as open,\n" +
+                "       (select (ph2.price::decimal)  from cr_schema.price_history ph2 where ph2.date > :dateFrom order by ph2.date desc limit 1) as close\n" +
+                "from cr_schema.price_history ph\n" +
+                "where ph.date > :dateFrom", parameterMap, (rs, i) -> {
+
+            block.setAvg(String.valueOf(rs.getDouble("avg")));
+            block.setOpen(String.valueOf(rs.getDouble("open")));
+            block.setClose(String.valueOf(rs.getDouble("close")));
+            block.setMin(String.valueOf(rs.getDouble("min")));
+            block.setMax(String.valueOf(rs.getDouble("max")));
+            return true;
+        });
+        return block;
     }
 }

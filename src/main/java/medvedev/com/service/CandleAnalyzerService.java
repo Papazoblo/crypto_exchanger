@@ -3,15 +3,22 @@ package medvedev.com.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import medvedev.com.dto.event.CandleCloseEvent;
-import medvedev.com.entity.CandleAnalyzeLogEntity;
 import medvedev.com.entity.PriceHistoryBlockEntity;
+import medvedev.com.enums.BlockTimeType;
 import medvedev.com.enums.OrderSide;
+import medvedev.com.enums.OrderStatus;
+import medvedev.com.enums.SystemConfiguration;
+import medvedev.com.enums.SystemState;
+import static medvedev.com.enums.SystemState.LAUNCHED;
+import static medvedev.com.service.ExchangeService.EXCHANGE_MESSAGE_PATTERN;
+import medvedev.com.service.strategy.AnalyzerStrategy;
+import medvedev.com.service.telegram.TelegramPollingService;
 import medvedev.com.wrapper.BigDecimalWrapper;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
+import java.math.RoundingMode;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -20,105 +27,84 @@ public class CandleAnalyzerService {
 
     private final PriceHistoryBlockService priceHistoryBlockService;
     private final CandleAnalyzeLogService candleAnalyzeLogService;
-    private final PriceProcessingService priceProcessingService;
+    private final ExchangeService exchangeService;
+    private final SystemConfigurationService systemConfigurationService;
+    private final List<AnalyzerStrategy> analyzerStrategy;
+    private final BinanceClientService binanceClientService;
+    private final ExchangeHistoryService exchangeHistoryService;
+    private final TelegramPollingService telegramPollingService;
 
     @EventListener
     public void analyzingCandle(CandleCloseEvent event) {
 
-        List<PriceHistoryBlockEntity> lastBlockList = priceHistoryBlockService.getLast3Block();
-        if (lastBlockList.size() == 3) {
-            Optional<CandleAnalyzeLogEntity> optional = candleAnalyzeLogService.getLast();
-            if (optional.isPresent()) {
-                if (optional.get().getType() == OrderSide.BUY) {
-                    checkToSell(lastBlockList.get(2), lastBlockList.get(1), lastBlockList.get(0));
-                } else {
-                    checkToBuy(lastBlockList.get(2), lastBlockList.get(1), lastBlockList.get(0));
-                }
-            } else {
-                checkToSell(lastBlockList.get(2), lastBlockList.get(1), lastBlockList.get(0));
-                checkToBuy(lastBlockList.get(2), lastBlockList.get(1), lastBlockList.get(0));
+        int limit = 5;
+
+        if (event.getTimeType().isExclude()) {
+            return;
+        }
+
+        List<PriceHistoryBlockEntity> lastBlockList = priceHistoryBlockService.getLastLimitBlock(event.getTimeType(), limit);
+        if (lastBlockList.size() == limit) {
+//            Optional<CandleAnalyzeLogEntity> optional = candleAnalyzeLogService.getLast();
+//            if (optional.isPresent()) {
+//                if (optional.get().getType() == OrderSide.BUY) {
+//                    checkToSell(lastBlockList.get(2), lastBlockList.get(1), lastBlockList.get(0));
+//                } else {
+//                    checkToBuy(lastBlockList.get(2), lastBlockList.get(1), lastBlockList.get(0));
+//                }
+//            } else {
+            //checkToSell(lastBlockList.get(2), lastBlockList.get(1), lastBlockList.get(0));
+
+            log.info("*** START ANALYZE {} {}", lastBlockList.get(0).getId(), event.getTimeType());
+            checkToBuy(lastBlockList);
+//            }
+        }
+    }
+
+    public void test(Long id, BlockTimeType timeType) {
+        int limit = 5;
+
+        List<PriceHistoryBlockEntity> lastBlockList = priceHistoryBlockService.getLastLimitBlock(id, timeType, limit);
+        if (lastBlockList.size() == limit) {
+            checkToBuy(lastBlockList);
+        }
+    }
+
+    public void createSell() {
+        exchangeHistoryService.findFirst(OrderSide.BUY, OrderStatus.FILLED).ifPresent(exchangeHistoryEntity -> {
+            exchangeService.createSellOrder(exchangeHistoryEntity, null);
+        });
+    }
+
+    public void createMessage() {
+        exchangeHistoryService.findFirst(OrderSide.BUY, OrderStatus.FILLED).ifPresent(item ->
+                telegramPollingService.sendMessage(String.format(EXCHANGE_MESSAGE_PATTERN, item.getOperationType().name(),
+                        item.getPrice(),
+                        item.getInitialAmount(),
+                        item.getInitialAmount().multiply(item.getPrice()).setScale(4, RoundingMode.HALF_EVEN),
+                        item.getPriceToSell())));
+
+    }
+
+    /**
+     * Триггер Создания ордера на покупку
+     */
+    private void checkToBuy(List<PriceHistoryBlockEntity> blockList) {
+
+        if (analyzerStrategy.stream()
+                .parallel()
+                .anyMatch(strategy -> strategy.isFound(blockList))) {
+
+            BigDecimalWrapper currentPrice = binanceClientService.getCurrentPrice();
+            candleAnalyzeLogService.save(blockList.get(2), blockList.get(1), blockList.get(0), currentPrice.toString(), OrderSide.BUY);
+
+            SystemState state = SystemState.valueOf(systemConfigurationService.findByName(SystemConfiguration.SYSTEM_STATE));
+            if (state == LAUNCHED) {
+
+                exchangeService.createBuyOrder(blockList.get(0),
+                        currentPrice,
+                        currentPrice.multiply(BigDecimalWrapper.valueOf(1.004)).setScale(2, RoundingMode.HALF_UP).toString());
             }
         }
     }
-
-    private void checkToBuy(PriceHistoryBlockEntity first,
-                            PriceHistoryBlockEntity middle,
-                            PriceHistoryBlockEntity last) {
-
-        boolean isLastGreaterThenFirst = isBlockGreaterThen(last, first);
-        boolean isLastGreaterThenMiddle = isBlockGreaterThen(last, middle);
-        boolean isMiddleBearish = isMiddleBearish(middle, first);
-        boolean isGreater = BigDecimalWrapper.of(last.getClose()).isGreaterThen(BigDecimalWrapper.of(middle.getClose()));
-        boolean isFirstBlack = BigDecimalWrapper.of(first.getOpen()).isGreaterThen(BigDecimalWrapper.of(first.getClose()));
-        boolean isMiddleBlack = BigDecimalWrapper.of(middle.getOpen()).isGreaterThen(BigDecimalWrapper.of(middle.getClose()));
-        boolean isLastWhite = BigDecimalWrapper.of(last.getClose()).isGreaterThen(BigDecimalWrapper.of(last.getOpen()));
-
-        log.info("ANALYZE\n\tisLastGreaterThenFirst: {}\n\t" +
-                "isLastGreaterThenMiddle: {}\n\t" +
-                "isMiddleBearish: {}\n\t" +
-                "isGreater: {}\n\t" +
-                "isLastWhite: {}\n\t", isLastGreaterThenFirst, isLastGreaterThenMiddle, isMiddleBearish, isGreater, isLastWhite);
-
-        if (isLastGreaterThenFirst
-                && isLastGreaterThenMiddle
-                && isMiddleBearish
-                && isGreater
-                && isLastWhite
-                && isMiddleBlack
-                && isFirstBlack) {
-
-            candleAnalyzeLogService.save(first, middle, last, priceProcessingService.getCurrentPrice().toString(), OrderSide.BUY);
-        }
-    }
-
-    private void checkToSell(PriceHistoryBlockEntity first,
-                             PriceHistoryBlockEntity middle,
-                             PriceHistoryBlockEntity last) {
-
-        boolean isLastGreaterThenFirst = isBlockGreaterThen(last, first);
-        boolean isLastGreaterThenMiddle = isBlockGreaterThen(last, middle);
-        boolean isMiddleBullish = isMiddleBullish(middle, first);
-        boolean isLess = BigDecimalWrapper.of(last.getClose()).isLessThen(BigDecimalWrapper.of(middle.getClose()));
-        boolean isFirstWhite = BigDecimalWrapper.of(first.getOpen()).isLessThen(BigDecimalWrapper.of(first.getClose()));
-        boolean isMiddleWhite = BigDecimalWrapper.of(middle.getOpen()).isLessThen(BigDecimalWrapper.of(middle.getClose()));
-        boolean isLastBlack = BigDecimalWrapper.of(last.getClose()).isLessThen(BigDecimalWrapper.of(last.getOpen()));
-
-        log.info("ANALYZE\n\tisLastGreaterThenFirst: {}\n\t" +
-                "isLastGreaterThenMiddle: {}\n\t" +
-                "isMiddleBullish: {}\n\t" +
-                "isGreater: {}\n\t" +
-                "isBlack: {}\n\t", isLastGreaterThenFirst, isLastGreaterThenMiddle, isMiddleBullish, isLess, isLastBlack);
-
-        if (isLastGreaterThenFirst
-                && isLastGreaterThenMiddle
-                && isMiddleBullish
-                && isLess
-                && isLastBlack
-                && isFirstWhite
-                && isMiddleWhite) {
-
-            candleAnalyzeLogService.save(first, middle, last, priceProcessingService.getCurrentPrice().toString(), OrderSide.SELL);
-        }
-    }
-
-    private boolean isBlockGreaterThen(PriceHistoryBlockEntity last, PriceHistoryBlockEntity other) {
-        return BigDecimalWrapper.of(last.getOpen()).subtract(BigDecimalWrapper.of(last.getClose())).abs()
-                .isGreaterThen(BigDecimalWrapper.of(other.getOpen()).subtract(BigDecimalWrapper.of(other.getClose())).abs());
-    }
-
-    private boolean isBlockLessThen(PriceHistoryBlockEntity last, PriceHistoryBlockEntity other) {
-        return BigDecimalWrapper.of(last.getOpen()).subtract(BigDecimalWrapper.of(last.getClose())).abs()
-                .isLessThenOrEqual(BigDecimalWrapper.of(other.getOpen()).subtract(BigDecimalWrapper.of(other.getClose())).abs());
-    }
-
-    private boolean isMiddleBearish(PriceHistoryBlockEntity middle, PriceHistoryBlockEntity first) {
-        return BigDecimalWrapper.of(middle.getOpen()).isLessThen(BigDecimalWrapper.of(first.getOpen()))
-                && BigDecimalWrapper.of(middle.getClose()).isLessThen(BigDecimalWrapper.of(first.getClose()));
-    }
-
-    private boolean isMiddleBullish(PriceHistoryBlockEntity middle, PriceHistoryBlockEntity first) {
-        return BigDecimalWrapper.of(middle.getOpen()).isGreaterThen(BigDecimalWrapper.of(first.getOpen()))
-                && BigDecimalWrapper.of(middle.getClose()).isGreaterThen(BigDecimalWrapper.of(first.getClose()));
-    }
-
 }

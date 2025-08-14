@@ -1,7 +1,6 @@
 package medvedev.com.wrapper;
 
 import java.math.BigDecimal;
-import java.math.MathContext;
 import java.math.RoundingMode;
 
 public class BigDecimalWrapper extends BigDecimal {
@@ -58,8 +57,7 @@ public class BigDecimalWrapper extends BigDecimal {
     }
 
     public static BigDecimalWrapper of(String val) {
-        BigDecimal value = new BigDecimal(val).multiply(CONSTANT).round(MathContext.UNLIMITED);
-        return new BigDecimalWrapper(value.toString());
+        return new BigDecimalWrapper(val);
     }
 
     public boolean isGreaterThenOrEqual(BigDecimal val) {

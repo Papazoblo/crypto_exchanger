@@ -2,13 +2,11 @@ package medvedev.com.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import medvedev.com.client.BinanceApiClient;
 import medvedev.com.component.ExchangeProperties;
 import medvedev.com.dto.ExchangeHistoryDto;
-import medvedev.com.dto.property.BinanceProperty;
-import medvedev.com.dto.response.OrderBookResponse;
+import static medvedev.com.dto.response.OrderBookResponse.PRICE_INDEX;
+import static medvedev.com.dto.response.OrderBookResponse.QUANTITY_INDEX;
 import medvedev.com.entity.ExchangeHistoryEntity;
-import medvedev.com.enums.ExchangeCancelType;
 import medvedev.com.enums.OrderSide;
 import medvedev.com.wrapper.BigDecimalWrapper;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -20,27 +18,22 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
 import static java.util.stream.Collectors.groupingBy;
-import static medvedev.com.dto.response.OrderBookResponse.PRICE_INDEX;
-import static medvedev.com.dto.response.OrderBookResponse.QUANTITY_INDEX;
 
 @Log4j2
 @Service
 @RequiredArgsConstructor
 public class PriceProcessingService {
 
-    private final BinanceProperty properties;
-    private final BinanceApiClient binanceApiClient;
+    private final BinanceClientService binanceClientService;
     private final ExchangeProperties exchangeProperties;
     private final PriceHistoryService priceHistoryService;
 
 
     @Scheduled(cron = "${exchange.cron.every-3-sec}")
-    public BigDecimalWrapper getCurrentPrice() {
-        BigDecimalWrapper currentPrice = new BigDecimalWrapper(binanceApiClient.getCurrentPrice(properties.getSymbol()).getPrice());
+    public void fixCurrentPrice() {
+        BigDecimalWrapper currentPrice = binanceClientService.getCurrentPrice();
         priceHistoryService.savePrice(currentPrice);
-        return currentPrice;
     }
 
     private ExchangeHistoryEntity getFirstOrderBy(ExchangeHistoryEntity order) {
@@ -49,54 +42,54 @@ public class PriceProcessingService {
         }
         return getFirstOrderBy(order.getPrevExchange());
     }
-
-    public BigDecimalWrapper getPriceToBuy() {
-        OrderBookResponse response = binanceApiClient.getOrderBook(properties.getSymbol(), 150);
-        return new BigDecimalWrapper(getMaxPriceByQuantity(response.getBids(), OrderSide.BUY).multiply(new BigDecimal("0.9999"))).setScale(2, RoundingMode.DOWN);
-    }
+//
+//    public BigDecimalWrapper getPriceToBuy() {
+//        OrderBookResponse response = binanceApiClient.getOrderBook(properties.getSymbol(), 150);
+//        return new BigDecimalWrapper(getMaxPriceByQuantity(response.getBids(), OrderSide.BUY).multiply(new BigDecimal("0.9999"))).setScale(2, RoundingMode.DOWN);
+//    }
 
     public BigDecimalWrapper getPriceToBuy(Optional<ExchangeHistoryEntity> lastOrder) {
 
         BigDecimalWrapper minPrice;
-        if (lastOrder.isPresent() && lastOrder.get().getOperationType() == OrderSide.BUY
-                && (lastOrder.get().getCancelType() == null || lastOrder.get().getCancelType() == ExchangeCancelType.BY_PRICE_ADJUSTMENT)) {
-            minPrice = new BigDecimalWrapper(getFirstOrderBy(lastOrder.get()).getPrice());
-        } else {
-            OrderBookResponse response = binanceApiClient.getOrderBook(properties.getSymbol(), 150);
-            minPrice = new BigDecimalWrapper(getMaxPriceByQuantity(response.getBids(), OrderSide.BUY).multiply(new BigDecimal("0.9998"))).setScale(2, RoundingMode.DOWN);
-        }
+//        if (lastOrder.isPresent() && lastOrder.get().getOperationType() == OrderSide.BUY
+//                && (lastOrder.get().getCancelType() == null || lastOrder.get().getCancelType() == ExchangeCancelType.BY_PRICE_ADJUSTMENT)) {
+//            minPrice = new BigDecimalWrapper(getFirstOrderBy(lastOrder.get()).getPrice());
+//        } else {
+//            OrderBookResponse response = binanceApiClient.getOrderBook(properties.getSymbol(), 150);
+//            minPrice = new BigDecimalWrapper(getMaxPriceByQuantity(response.getBids(), OrderSide.BUY).multiply(new BigDecimal("0.9998"))).setScale(2, RoundingMode.DOWN);
+//        }
 
-        BigDecimalWrapper currentPrice = getCurrentPrice();
+        BigDecimalWrapper currentPrice = binanceClientService.getCurrentPrice();
         BigDecimalWrapper minExchangePrice;
-        if (currentPrice.isLessThenOrEqual(minPrice)) {
-            minExchangePrice = new BigDecimalWrapper(currentPrice.subtract(BigDecimal.valueOf(exchangeProperties.getPriceDifference())));
-        } else {
-            minExchangePrice = minPrice;
-        }
+//        if (currentPrice.isLessThenOrEqual(minPrice)) {
+//            minExchangePrice = new BigDecimalWrapper(currentPrice.subtract(BigDecimal.valueOf(exchangeProperties.getPriceDifference())));
+//        } else {
+//            minExchangePrice = minPrice;
+//        }
 
-        return lastOrder.filter(item -> item.getOperationType() == OrderSide.BUY)
-                .map(item -> {
-                    if (item.getCancelType() == ExchangeCancelType.BY_PRICE_ADJUSTMENT) {
-                        BigDecimalWrapper resultPriceSimple = processingPrice(lastOrder.get().getPrice(), BigDecimal.valueOf(exchangeProperties.getPriceDifference()), false);
-                        BigDecimalWrapper resultPriceDouble = processingPrice(lastOrder.get().getPrice(), BigDecimal.valueOf(exchangeProperties.getDoublePriceDifference()), false);
-                        if (resultPriceSimple.isGreaterThen(currentPrice)) {
-                            if (resultPriceDouble.isGreaterThen(currentPrice)) {
-                                return new BigDecimalWrapper(currentPrice.subtract(BigDecimal.valueOf(exchangeProperties.getPriceDifference())));
-                            } else {
-                                return resultPriceDouble;
-                            }
-                        }
-                        return resultPriceSimple;
-                    } else if (item.getCancelType() == ExchangeCancelType.FROM_SERVICE) {
-                        return minExchangePrice;
-                    }
-                    BigDecimalWrapper newPrice = processingPrice(lastOrder.get().getPrice(), BigDecimal.valueOf(exchangeProperties.getDoublePriceDifference()), true);
-                    if (newPrice.isGreaterThen(minExchangePrice)) {
-                        return minExchangePrice;
-                    }
-                    return newPrice;
-                })
-                .orElse(minExchangePrice);
+        return null;//lastOrder.filter(item -> item.getOperationType() == OrderSide.BUY).get();
+//                .map(item -> {
+//                    if (item.getCancelType() == ExchangeCancelType.BY_PRICE_ADJUSTMENT) {
+//                        BigDecimalWrapper resultPriceSimple = processingPrice(lastOrder.get().getPrice(), BigDecimal.valueOf(exchangeProperties.getPriceDifference()), false);
+//                        BigDecimalWrapper resultPriceDouble = processingPrice(lastOrder.get().getPrice(), BigDecimal.valueOf(exchangeProperties.getDoublePriceDifference()), false);
+//                        if (resultPriceSimple.isGreaterThen(currentPrice)) {
+//                            if (resultPriceDouble.isGreaterThen(currentPrice)) {
+//                                return new BigDecimalWrapper(currentPrice.subtract(BigDecimal.valueOf(exchangeProperties.getPriceDifference())));
+//                            } else {
+//                                return resultPriceDouble;
+//                            }
+//                        }
+//                        return resultPriceSimple;
+//                    } else if (item.getCancelType() == ExchangeCancelType.FROM_SERVICE) {
+//                        return minExchangePrice;
+//                    }
+//                    BigDecimalWrapper newPrice = processingPrice(lastOrder.get().getPrice(), BigDecimal.valueOf(exchangeProperties.getDoublePriceDifference()), true);
+//                    if (newPrice.isGreaterThen(minExchangePrice)) {
+//                        return minExchangePrice;
+//                    }
+//                    return newPrice;
+//                })
+//                .orElse(minExchangePrice);
     }
 
     private BigDecimalWrapper processingPrice(BigDecimalWrapper price, BigDecimal changingSize, boolean isAdding) {
@@ -130,7 +123,8 @@ public class PriceProcessingService {
                     } else if (new BigDecimalWrapper(currentPrice).isLessThen(lastOrderPrice)
                             && new BigDecimalWrapper(currentPrice).isLessThen(resultPriceSubtract)
                             && resultPriceSubtract.isGreaterThen(minExchangePrice)
-                            && item.getCancelType() == ExchangeCancelType.BY_LACK_OF_EXCHANGE) {
+//                            && item.getCancelType() == ExchangeCancelType.BY_LACK_OF_EXCHANGE
+                    ) {
                         log.info("Branch 2\n");
                         return resultPriceSubtract.setScale(2, RoundingMode.HALF_UP);
                     }
@@ -142,7 +136,7 @@ public class PriceProcessingService {
 
 
     private BigDecimalWrapper getMaxPriceByQuantity(List<String[]> list, OrderSide orderSide) {
-        double price = getCurrentPrice().doubleValue();
+        double price = binanceClientService.getCurrentPrice().doubleValue();
         Map<Double, List<String[]>> mapPrice = list.stream()
                 .collect(groupingBy(item -> Double.valueOf(item[PRICE_INDEX].substring(0, item[PRICE_INDEX].indexOf('.') + 2))));
 
